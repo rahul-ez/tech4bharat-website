@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sora, Inter, JetBrains_Mono } from "next/font/google";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const sora = Sora({
@@ -19,7 +20,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Tech4Bharat 2026",
-  description: "Scalable Innovations for Next-Gen India — India's Biggest Hackathon.",
+  description:
+    "Scalable Innovations for Next-Gen India — India's Biggest Hackathon.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -29,7 +31,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${sora.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
       style={{ colorScheme: "dark" }}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col bg-[#0b1120] text-white">
+        
+        {/* COMMON RESPONSIVE NAVBAR */}
+        <Navbar />
+
+        {/* PAGE CONTENT */}
+        <main className="flex-1">
+          {children}
+        </main>
+
+      </body>
     </html>
   );
 }
