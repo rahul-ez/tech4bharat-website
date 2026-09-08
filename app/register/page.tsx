@@ -19,7 +19,7 @@ export default function RegisterPage() {
         <p className="mx-auto mt-8 max-w-3xl text-lg leading-8 text-slate-400 md:text-xl">
           Join innovators, developers and problem solvers from across India
           and be part of the journey towards building scalable innovations
-          for India's next generation.
+          for India&apos;s next generation.
         </p>
 
       </section>
@@ -87,7 +87,7 @@ export default function RegisterPage() {
             </p>
 
             <h2 className="text-4xl font-bold md:text-6xl">
-              What You'll Need
+              What You&apos;ll Need
             </h2>
 
             <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-slate-400">

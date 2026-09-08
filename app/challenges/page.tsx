@@ -23,7 +23,7 @@ export default function ChallengesPage() {
           <p className="mx-auto mt-8 max-w-4xl text-base leading-relaxed text-slate-400 sm:text-lg md:mt-10 md:text-xl lg:text-2xl">
             Tech4Bharat 2026 brings innovators together to explore meaningful
             problems and build practical, scalable technology solutions for
-            India's next generation.
+            India&apos;s next generation.
           </p>
 
         </div>
@@ -65,7 +65,7 @@ export default function ChallengesPage() {
               <p>
                 Until then, participants can explore the theme and begin
                 thinking about scalable innovations that can contribute to
-                India's next generation.
+                India&apos;s next generation.
               </p>
             </div>
 

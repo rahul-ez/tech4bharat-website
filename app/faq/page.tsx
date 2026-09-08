@@ -88,7 +88,7 @@ export default function FAQPage() {
           </p>
 
           <h2 className="text-3xl font-bold sm:text-4xl md:text-5xl">
-            We've Got Answers
+            We&apos;ve Got Answers
           </h2>
         </div>
 

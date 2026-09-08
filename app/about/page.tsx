@@ -93,7 +93,7 @@ export default function AboutPage() {
 
           <p className="mx-auto mt-8 max-w-4xl text-base leading-relaxed text-slate-400 sm:text-lg md:mt-10 md:text-xl lg:text-2xl">
             The focus is on building solutions that are practical, impactful and
-            capable of scaling to meet the needs of India's next generation.
+            capable of scaling to meet the needs of India&apos;s next generation.
           </p>
 
         </div>
