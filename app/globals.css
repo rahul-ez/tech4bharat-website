@@ -152,6 +152,49 @@
   --shadow-elevation: var(--shadow-elevation);
   --shadow-glow-primary: var(--glow-primary);
   --shadow-glow-ember: var(--glow-ember);
+
+  /* ui-tokens.md's Layout Tokens table — generates max-w-* utilities. */
+  --container-content: 72rem;
+  --container-hero: 90rem;
+  --container-content-narrow: 42rem;
+  --container-content-wide: 60rem;
+
+  /*
+   * Hero aurora drift. Continuous background motion is authorized for the
+   * hero/landing treatment by context/decisions.md DEC-004; every consumer
+   * pairs it with `motion-reduce:animate-none`.
+   */
+  --animate-aurora: aurora 58s linear infinite;
+
+  @keyframes aurora {
+    from {
+      background-position: 50% 50%, 50% 50%;
+    }
+    to {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
+
+  /*
+   * The /prizes 1st-place gem's continuous 3D sway — context/decisions.md
+   * DEC-007. Paired with motion-reduce:animate-none at every call site.
+   * A full 360deg rotateY on a flat SVG plane goes edge-on (near-zero
+   * visible width) for roughly half of every cycle — confirmed by an actual
+   * full-motion screenshot showing the gem reduced to a thin vertical
+   * smudge, not assumed. Swaying within +-32deg never crosses that edge-on
+   * point, so the gem stays visible and faceted throughout.
+   */
+  --animate-gem-spin: gem-spin 6s ease-in-out infinite;
+
+  @keyframes gem-spin {
+    0%,
+    100% {
+      transform: rotateY(-32deg);
+    }
+    50% {
+      transform: rotateY(32deg);
+    }
+  }
 }
 
 /*

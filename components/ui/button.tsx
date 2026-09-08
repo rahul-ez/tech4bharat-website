@@ -36,6 +36,7 @@ export interface ButtonProps
   extends React.ComponentProps<"button">,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  /** No-op when `asChild` is true — a loading overlay can't be composed onto an arbitrary consumer element (e.g. a Link). */
   loading?: boolean
 }
 
@@ -48,11 +49,26 @@ function Button({
   children,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot.Root : "button"
+  if (asChild) {
+    // Radix's Slot.Root requires exactly one element child to clone props
+    // onto — no wrapper spans, no loading overlay here.
+    return (
+      <Slot.Root
+        data-slot="button"
+        data-variant={variant ?? "primary"}
+        className={cn(buttonVariants({ variant, className }))}
+        aria-disabled={disabled || undefined}
+        {...props}
+      >
+        {children}
+      </Slot.Root>
+    )
+  }
+
   const isDisabled = Boolean(disabled) || loading
 
   return (
-    <Comp
+    <button
       data-slot="button"
       data-variant={variant ?? "primary"}
       data-loading={loading || undefined}
@@ -70,7 +86,7 @@ function Button({
       <span className={cn("inline-flex items-center gap-2", loading && "opacity-0")}>
         {children}
       </span>
-    </Comp>
+    </button>
   )
 }
 

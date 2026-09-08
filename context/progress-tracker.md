@@ -63,16 +63,19 @@ Cross-referenced against `ui-registry.md`'s Current Registry — every entry the
 | Badge | Active | `components/ui/badge.tsx` | Default/Success/Warning/Error/Informational/Live |
 | Dialog/Modal | Active | `components/ui/dialog.tsx` | Built ahead of a confirmed use case at explicit request — see `ui-registry.md`'s note |
 | Drawer / Spinner / Separator | Active | `components/ui/{sheet,spinner,separator}.tsx` | Sheet = the registered Drawer |
-| Site Header / Mobile Navigation Drawer | Not Started | None | Registered Planned — Composed Component, not yet built |
-| Page Header | Not Started | None | Registered Planned |
-| Hero | Not Started | None | Registered Planned |
+| Site Header / Mobile Navigation Drawer | Not Started | None | Registered Planned — Composed Component, not yet built. Landing currently uses the temporary `components/layout/header.tsx` placeholder instead (see its own Avoid-list note below) |
+| Page Backdrop | Active | `components/public/page-backdrop.tsx` | Grid-texture-only page background, `/timeline`/`/prizes` only — see `context/decisions.md` DEC-006 |
+| Page Header | Active | `components/public/page-header.tsx` | Used by `/timeline` only — `/prizes` has its own bespoke header now, see DEC-008 |
+| Hero | Active | `components/public/hero.tsx`, rendered by `app/page.tsx` | Aurora + animated grid + strengthened glow, staggered entrance (DEC-004) |
+| Event Glance | Active | `components/public/event-glance.tsx`, rendered by `app/page.tsx` | Registration/Finale/Prize-pool recap directly below Hero |
 | FAQ Item/Accordion | Not Started | None | Registered Planned |
-| Timeline | Not Started | None | Registered Planned |
-| Prize Card / Prize Display | Not Started | None | Registered Planned |
+| Timeline | Active | `components/public/timeline.tsx`, rendered by `app/timeline/page.tsx` | Vertical-always, phase icons, live-pulse on active node — moved off `/` per DEC-006 |
+| Prize Card / Prize Display | Active | `components/public/prize-display.tsx`, rendered by `app/prizes/page.tsx` | Mountain-range waveform with three rising rank markers (1st tallest/most prominent), bespoke CTA header, vertical theme-word accent column — moved off `/` per DEC-006; isometric podium scrapped for this waveform direction per DEC-009 |
 | Empty State | Not Started | None | Registered Planned |
 | Pending Confirmation State | Not Started | None | Registered Planned |
-| Responsive behavior | Not Started | None | No page/composed component exists yet to apply `ui-rules.md`'s Responsive Behavior table to |
+| Responsive behavior | Verified for Hero, Event Glance, Timeline, Prize Display | Real Playwright/Chromium screenshots at 375/768/1440px each round, not just class-name inspection | A real bug was caught this way once (Prize Display's featured-card text clipping at a 768px 3-column layout) and fixed before shipping |
 | Accessibility foundations (Focus Treatment) | Done | `.focus-ring` utility class in `app/globals.css`, applied by every interactive primitive above | |
+| Reduced-motion foundation | Done | `components/motion-provider.tsx` (`<MotionConfig reducedMotion="user">` in the root layout) | Fixes a real hydration-mismatch bug found in Hero/EventGlance/Timeline — see `ui-registry.md`'s Accessibility Registry note |
 
 ---
 
@@ -80,16 +83,17 @@ Cross-referenced against `ui-registry.md`'s Current Registry — every entry the
 
 | Route | Status | UI | Responsive | Content | Notes |
 |---|---|---|---|---|---|
-| `/` | Not Started | Not Started | Not Started | Not Started | — |
+| `/` | In Progress | Hero + Event Glance | Verified at 375/768/1440px | All confirmed facts only | Timeline and Prizes sections were built here in an earlier pass, then removed per `context/decisions.md` DEC-006 — they're real redundant with Hero/Event Glance and now live at `/timeline`/`/prizes` instead. A closing CTA band (the third of the three "bookend" sections) is not built yet |
 | `/about` | Not Started | Not Started | Not Started | Not Started | — |
 | `/challenges` | Not Started | Not Started | Not Started | Not Started | Will use Pending Confirmation State per `build-plan.md` — no content confirmed |
-| `/timeline` | Not Started | Not Started | Not Started | Not Started | — |
-| `/prizes` | Not Started | Not Started | Not Started | Not Started | — |
+| `/timeline` | Done | `components/public/timeline.tsx` | Verified at 375/768/1440px | All confirmed facts only | Vertical-always layout, real page-level spacing (not a homepage-compressed strip) |
+| `/prizes` | Done | `components/public/prize-display.tsx` | Verified at 375/768/1440px | All confirmed facts only | Mountain-range waveform silhouette with three rank markers rising from its peaks (DEC-009, superseding DEC-008's isometric podium) — a real layout bug (marker stack overflowing above an undersized container, overlapping the CTA button at 375px) was caught via `getBoundingClientRect()` inspection and fixed before shipping; one-time staggered entrance (waveform, then markers) verified via computed-style opacity sampling and scroll-cycle replay checks |
 | `/rules` | Not Started | Not Started | Not Started | Not Started | Partially pending per `tbd.md` |
 | `/faq` | Not Started | Not Started | Not Started | Not Started | — |
 | `/register` | Not Started | Not Started | Not Started | Not Started | See Section 6 — scope depends on `tbd.md` |
+| `/dev/components` | Done (temporary) | All Primitive Components | — | — | Internal-only review route, to be deleted before launch |
 
-No route currently exists in any form.
+Four routes exist and build/render correctly: `/`, `/timeline`, `/prizes`, `/dev/components`.
 
 ---
 
@@ -252,6 +256,7 @@ Phase 0's token/font setup (done) and the Primitive Component layer (done, this 
 - Do not provision Supabase yet — that begins in Phase 5, and `config/site.ts` (Phase 0) is the interim data source.
 - Do not link `/dev/components` from any real navigation — it's a temporary review route, to be deleted before launch per `build-plan.md` Phase 1.
 - Do not build Site Header/Mobile Navigation Drawer against invented nav item labels — `ui-rules.md`'s Navigation section already lists the confirmed public routes.
+- `components/layout/header.tsx`, wired into `app/layout.tsx`, is a temporary placeholder header (wordmark + flat nav row, no drawer/active-state/sticky behavior) — not the registered Site Header composed component in `ui-registry.md`. Delete it and its import once the real Site Header is built; don't extend it with drawer/responsive logic in the meantime.
 
 ---
 

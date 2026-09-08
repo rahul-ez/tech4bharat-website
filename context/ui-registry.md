@@ -184,8 +184,17 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Token/rule dependencies:** `overlay`, `surface`, `space-4`.
 - **Relevant routes:** all public routes.
 
+### Page Backdrop
+- **Status:** Active — `components/public/page-backdrop.tsx`
+- **Purpose:** The circuit/grid texture as a full-page decorative background, without the aurora/ignition-glow. The only mechanism through which the grid texture is allowed to appear outside the Hero.
+- **Use when:** `/timeline`, `/prizes` — the two pages `context/decisions.md` DEC-006 explicitly extended the grid texture to.
+- **Do not use when:** Any other page. This is not a general-purpose decorative wrapper — extending it to a new page requires the same kind of explicit product decision DEC-006 was, not silent reuse because it's convenient.
+- **Composition:** `AnimatedGridPattern` (motion) + a static grid fallback, both always rendered, visibility toggled by `motion-safe:`/`motion-reduce:` CSS only — never a `useReducedMotion()` structural branch (see the Accessibility Registry's note on why).
+- **Token/rule dependencies:** `border-light` (grid lines), `background`. Never `primary`/`ember` (no glow/aurora here — that distinction from Hero is the entire point of DEC-006 restricting this to "grid only").
+- **Relevant routes:** `/timeline`, `/prizes`.
+
 ### Page Header
-- **Status:** Planned
+- **Status:** Active — `components/public/page-header.tsx`
 - **Purpose:** The standard non-hero page introduction (eyebrow + heading + supporting text).
 - **Use when:** Every page except the homepage.
 - **Do not use when:** The homepage — that uses Hero instead.
@@ -193,18 +202,29 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Variants:** none — deliberately one consistent pattern across all pages.
 - **Responsive behavior:** no structural change; width caps to `content-column-narrow` at all sizes.
 - **Accessibility requirements:** the heading here is the page's single `<h1>`.
-- **Token/rule dependencies:** label typography, page-heading typography, `text-secondary`, `space-8` to first content section.
-- **Relevant routes:** `/about`, `/challenges`, `/timeline`, `/prizes`, `/rules`, `/faq`, `/register`.
+- **Token/rule dependencies:** label typography, page-heading typography (`text-4xl`/`leading-[1.15]` — the exact `2.25rem`/`1.15` from `ui-tokens.md`'s Typography table), `text-secondary`, `space-8` to first content section. The component itself stays flat (no gradient/glow of its own) even on `/timeline`, which wraps it in `PageBackdrop` — the backdrop is the page's concern, not the header's, per `ui-rules.md`'s Page Headers section.
+- **Relevant routes:** `/timeline` only. `/prizes` no longer uses this component — it now has its own bespoke two-column header built into `PrizeDisplay`, per `context/decisions.md` DEC-008. Not yet used by `/about`, `/challenges`, `/rules`, `/faq`, `/register` — those pages don't exist yet.
 
 ### Hero
-- **Status:** Planned
+- **Status:** Active — `components/public/hero.tsx`
 - **Purpose:** The homepage's single high-impact introduction.
 - **Use when:** Homepage only.
 - **Do not use when:** Any other page — see `ui-rules.md`'s hard limit on hero composition leaking elsewhere.
-- **Composition:** eyebrow + hero heading + supporting text + primary/secondary CTA (Buttons), over the ignition-glow + circuit-texture background.
-- **Responsive behavior:** headline steps down at smaller breakpoints, CTAs stack full-width on mobile, per `ui-rules.md`.
-- **Accessibility requirements:** contains the site's single `<h1>` on the homepage; entrance animation respects `prefers-reduced-motion`.
-- **Token/rule dependencies:** `hero-max-width`, hero typography, `glow-primary`/`glow-ember`, circuit texture, `overlay` (if imagery is ever added).
+- **Composition:** eyebrow + hero heading + supporting text + a prize-pool/registration-date teaser + primary/secondary CTA (Buttons), over an aurora mesh (`components/ui/aurora-background.tsx`) + animated grid (`components/ui/animated-grid-pattern.tsx`) + a strengthened ignition-glow radial gradient.
+- **Responsive behavior:** headline steps through three distinct sizes (3.5rem → 4rem → 4.5rem at the 640px/1024px breakpoints, not a single scaled-down value), CTAs stack full-width below 640px, per `ui-rules.md`. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **Accessibility requirements:** contains the site's single `<h1>` on the homepage. Continuous aurora/grid motion and a staggered entrance (fade + rise) are authorized by `context/decisions.md` DEC-004, which relaxed `ui-rules.md`'s Motion "Forbidden" list for this treatment specifically; every animated piece is gated behind `useReducedMotion`/`motion-reduce:` and falls back to a static equivalent.
+- **Token/rule dependencies:** `hero-max-width` (`max-w-hero`), `content-column-wide`/`content-column-narrow` (`max-w-content-wide`/`max-w-content-narrow`), hero typography, `primary`/`ember` (aurora + ignition glow — no hue outside these two survives from the installed components' defaults), `border-light` (circuit texture/grid lines), stat/prize-number typography (prize-pool figure only — the registration date intentionally uses plain text styling, not the heavy stat pairing, per the typography Named Rule reserving that for numbers representing scale/achievement).
+- **Relevant routes:** `/` only.
+
+### Event Glance
+- **Status:** Active — `components/public/event-glance.tsx`
+- **Purpose:** A compact three-fact recap directly below the Hero: Registration Opens, Grand Finale, Prize Pool.
+- **Use when:** Homepage, directly below Hero.
+- **Do not use when:** As a replacement for Timeline or Prize Display — those are the full compositions, now live on `/timeline`/`/prizes` (see their entries below); this stays a lightweight homepage recap, not a duplicate of either.
+- **Composition:** section heading (h2, "Event at a Glance") + a 1/2/3-column card grid (`ui-tokens.md`'s standard card-grid responsive rule). Each card: a Standard-variant Card + a hover-only `BorderBeam` (`components/ui/border-beam.tsx`) that loops the card's border on `:hover` — a binary state change, not a value tracking cursor position, so it doesn't fall under `context/decisions.md` DEC-004's still-forbidden "cursor-follow glow." The Prize Pool figure uses `NumberTicker` (`components/ui/number-ticker.tsx`) to count up on scroll into view.
+- **Responsive behavior:** 1 column (mobile) → 2 (≥640px) → 3 (≥1024px), per `ui-tokens.md`'s card-grid rule. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **Accessibility requirements:** entrance stagger triggers once via `whileInView` (not on every scroll pass); `BorderBeam` is purely decorative (`pointer-events-none`) and never carries information a screen reader needs. Gated on `useReducedMotion`: the rise/stagger snaps straight to its end state, `BorderBeam` isn't rendered at all, and the Prize Pool figure renders its final formatted value directly instead of counting up.
+- **Token/rule dependencies:** `content-max-width` (`max-w-content` — a regular section, not a hero/bookend, per `ui-rules.md`'s Layout section), `surface-secondary`/`border` (Card standard), `primary`/`ember` (BorderBeam, NumberTicker), stat/prize-number typography (Prize Pool figure only, same Named Rule as Hero).
 - **Relevant routes:** `/` only.
 
 ### FAQ Item / FAQ Accordion
@@ -218,33 +238,36 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Relevant routes:** `/faq`.
 
 ### Timeline
-- **Status:** Planned
-- **Purpose:** Displays the confirmed hackathon milestones in sequence.
-- **Composition:** repeated milestone nodes (dot + label + optional date) connected by a line.
-- **Variants:** vertical (mobile), horizontal (desktop) — same component, responsive layout, not two components.
-- **States per milestone:** upcoming, active, completed, pending-date (uses a `warning` badge for unconfirmed dates — never a fabricated date).
-- **Responsive behavior:** vertical layout on mobile/tablet, horizontal on desktop given the current small (three) milestone count, per `ui-rules.md`.
-- **Accessibility requirements:** milestone state communicated via icon + text, not color alone.
-- **Token/rule dependencies:** `primary`, `primary-muted`, `border-muted`, `glow-primary`, `warning`.
-- **Relevant routes:** `/timeline`, and a condensed version inside the Hero stat strip if that pattern is used (see Page-Level Patterns).
+- **Status:** Active — `components/public/timeline.tsx`
+- **Purpose:** Displays the confirmed hackathon milestones in sequence, as its own dedicated page.
+- **Composition:** repeated milestone nodes (icon-in-circle + card containing title/badge/date/description) connected by a spine, wrapped in a semantic `<ol>`/`<li>`. Three nodes: Registration Opens (7 Sept 2026, active), Online Preliminaries (pending-date), Grand Finale (25–27 Dec 2026, Bengaluru).
+- **Variants:** none — a single vertical layout at every breakpoint. The previously-documented "vertical mobile/tablet, horizontal desktop" behavior was retired per `context/decisions.md` DEC-006: Timeline was removed from `/` (where the horizontal desktop variant existed to compress into a homepage strip), and with no homepage context left to serve, a single generously-spaced vertical layout suits the dedicated page better than a compressed one ever did.
+- **States per milestone:** upcoming, active, completed, pending-date (uses a `warning` badge for unconfirmed dates — never a fabricated date). Milestone state is a build-time snapshot in the component's data array; it belongs in `hackathon_config` once Phase 5 lands, and is deliberately not derived from `new Date()` at render (the page is statically prerendered, so a runtime date would disagree between server and client).
+- **Responsive behavior:** vertical at all sizes, node/icon/typography sizing steps up at the `sm` breakpoint. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **Accessibility requirements:** milestone state communicated via icon + text, not color alone — active carries a `live` Badge ("Open now") plus a pulse ring, pending-date a `warning` Badge, completed a check icon (overriding the phase icon), upcoming neither. The connecting spine and pulse ring are `aria-hidden` decoration. Entrance is a one-time `whileInView` stagger (`viewport={{ once: true }}`) — explicitly verified this round by reading computed styles across multiple scroll direction changes (down past the section, back to page top, back down again): state is byte-identical after the first reveal, confirming it doesn't re-trigger or track scroll position. An earlier version tied the spine's draw-in continuously to scroll offset via `useScroll`/`useTransform`; that's gone, replaced by a one-time `scaleY` reveal fired by the same `whileInView` pass as the nodes. Gated on `prefers-reduced-motion` via CSS (`motion-safe:`/`motion-reduce:`), never the `useReducedMotion()` hook for anything structural — see the note on this in the Accessibility Registry below.
+- **Token/rule dependencies:** `primary`, `primary-muted`, `border-muted`, `glow-primary` (active dot's static box-shadow) plus a CSS `animate-ping` ring specifically on the active dot — `ui-rules.md`'s Timeline section previously forbade pulsing here; DEC-006 carves out this one element specifically, narrower than DEC-004's general hero/landing relaxation. `warning`, `surface-secondary`/`border` (per-node cards), `content-max-width`. Phase icons (registration/online/finale, from `lucide-react`) are DEC-006's other carve-out to the "no decorative icons" rule — always paired with the node's text title, functioning as wayfinding, not standing alone as decoration. The page itself (not this component) adds the circuit/grid texture via `PageBackdrop`, also DEC-006.
+- **Relevant routes:** `/timeline` only — removed from `/` per DEC-006.
 
 ### Prize Card
-- **Status:** Planned
+- **Status:** Active — inlined within `components/public/prize-display.tsx` as `Marker`, not a separately exported component. "Prize Card" names the registered concept (one tier's display unit); the current implementation is a vertical marker rising from the waveform, not a card, box, or 3D block.
 - **Purpose:** Displays a single prize tier.
-- **Composition:** Card (Featured variant for 1st place, Standard for 2nd/3rd) + rank label + stat-number amount.
-- **Variants:** First-place (Featured), Standard (2nd/3rd place and any future confirmed tier).
-- **Responsive behavior:** stacks to 1 column on mobile, up to 3 in a row on desktop, per the standard grid rules.
-- **Accessibility requirements:** rank communicated in text, not position/color alone.
-- **Token/rule dependencies:** Card tokens, stat-number typography, `primary` (1st place only), `glow-primary` (1st place only).
-- **Relevant routes:** `/prizes`, and the Prizes bookend section on `/`.
+- **Composition:** placement label ("1st/2nd/3rd Place") + amount, stacked above a small dot, above a vertical connector line whose bottom end lands exactly on the mountain-waveform peak beneath it (see Prize Display's `Waveform`). Line length (and therefore how "elevated" the marker reads) varies per tier — 1st tallest — with 1st's dot also larger and glowing. No tagline, description, or judging-criteria copy under any marker — placement and amount are the only facts confirmed anywhere in `tbd.md`.
+- **Variants:** First-place (featured — tallest line, larger glowing dot, `primary`-colored amount), Standard (2nd/3rd place and any future confirmed tier — shorter line, smaller dot, `text-primary` amount stays white).
+- **Responsive behavior:** the whole waveform+marker composition scales with its container; marker x-positions are percentage-based (22/50/78%) so they track the waveform's peaks at every width. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **Accessibility requirements:** rank communicated as literal text ("1st/2nd/3rd Place" label, not position/color alone). The waveform SVG is `aria-hidden`, purely decorative.
+- **Token/rule dependencies:** `primary` (dots, featured amount, line), `border-light` (standard line, waveform stroke), `text-primary`/`text-muted` (standard amount, label).
+- **Relevant routes:** `/prizes` only.
 
 ### Prize Display
-- **Status:** Planned
-- **Purpose:** The full prize section — total pool statement plus the set of Prize Cards.
-- **Composition:** total-pool stat number + grid of Prize Cards.
-- **Token/rule dependencies:** see Prize Card; total pool uses the largest stat-number treatment.
-- **Relevant routes:** `/prizes` (full), `/` (bookend section, per `site-structure.md`).
-- **Notes:** Only the three confirmed prize tiers and the confirmed total are ever rendered — see Page-Level Patterns below.
+- **Status:** Active — `components/public/prize-display.tsx`
+- **Purpose:** The full prize section, including its own bespoke header — headline + supporting copy + CTA at top, a mountain-range waveform with three rank markers and a vertical theme-word accent column below — as its own dedicated page. Fifth visual pass this session: a plain 3-equal-card grid, a boxed ascending-bar podium, floating dot-and-line markers with a signature gem icon, literal isometric 3D podium blocks (DEC-008), each superseded by the next on direct feedback or a new reference — now a mountain-range waveform with three rising rank markers, per `context/decisions.md` DEC-009. Earlier versions are not kept as fallbacks.
+- **Composition:** header block (eyebrow "Prizes" + `h1` "Rewarding what matters" + supporting copy, the confirmed ₹6,00,000/three-tiers/grand-finale statement + a "Register Now" CTA → `/register`) — a named, page-specific exception to `ui-rules.md`'s Page Headers pattern, per DEC-008/DEC-009. Below it: a full-width row containing the waveform+markers (a hand-authored three-peak SVG path, `Marker`s positioned on each peak — see Prize Card) and, at `lg`+ only, a vertical accent column reading "Scalable / Innovations / Next-Gen / India" (`writing-mode: vertical-rl`) — `project-overview.md`'s confirmed theme string split into its four words, not invented phrasing.
+- **Responsive behavior:** header stacks above the waveform at all widths (no two-column split in this version); the vertical accent column is hidden below `lg` (1024px) as a purely atmospheric element that doesn't compress well. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **A real layout bug caught and fixed before shipping:** the waveform/marker container was first sized `min-h-[280px]`, well short of the 1st-place marker's actual rendered extent (peak offset + line + label/amount/dot stack, ≈415px measured via `getBoundingClientRect()`). This overlapped the "Register Now" button at 375px specifically, where a wrapped 2-line heading left less clearance than at wider breakpoints — not caught by the 1440px screenshot alone, which had enough incidental gap to hide it. Fixed by sizing the container to the marker's measured extent (`min-h-[440px] sm:min-h-[480px]`).
+- **Accessibility requirements:** entrance is a one-time reveal — one ancestor `motion.div` declares `whileInView`/`viewport={{ once: true }}`, and Motion's variant propagation carries that state to the waveform and marker group beneath it (no independent per-element viewport triggers that could drift apart), gated on `prefers-reduced-motion` via `MotionConfig`'s `reducedMotion="user"` (no `useReducedMotion()` structural branch). Verified two ways, not assumed: (1) sampling computed opacity of the waveform vs. the 1st-place marker across the first ~2s after scroll-into-view confirmed real sequencing — waveform fully visible (~400ms) well before the marker starts appearing (~700–900ms); (2) comparing computed opacity/transform after the first reveal against two further scroll-away-and-back cycles showed byte-identical values every time, confirming the entrance doesn't replay.
+- **Token/rule dependencies:** see Prize Card. The page itself (not this component) adds the circuit/grid texture via `PageBackdrop`, per DEC-006. The bespoke header is DEC-008/DEC-009 — see `ui-rules.md`'s Page Headers section. DEC-007's wireframe gem is retired as of DEC-009 (see `ui-tokens.md`'s Visual Effects table).
+- **Relevant routes:** `/prizes` only.
+- **Notes:** Only the three confirmed prize tiers and the confirmed total are ever rendered — see Page-Level Patterns below. This round's reference image's per-tier taglines ("Most impactful solution...", "Ideas with strong execution...") and its vertical accent wording ("PEOPLE / IDEAS / TECHNOLOGY / A STRONGER BHARAT") were both deliberately not adopted — neither is confirmed anywhere in `project-overview.md`/`tbd.md`. The accent column instead reuses the exact confirmed theme string already used verbatim in Hero. Everything else in the reference (waveform silhouette, three-peak composition, 1st-place prominence, one-time staggered entrance) was built as specified. Per explicit instruction this round, spacing/CTA/nav-active-state fixes are deliberately deferred to a later pass, not part of this redesign.
 
 ### Empty State
 - **Status:** Planned
@@ -323,14 +346,14 @@ Patterns describe reusable *composition*, not confirmed content. Product-specifi
 **Applies to:** any page surfacing a `tbd.md` Not Confirmed item.
 
 ### Timeline Section
-**Reusable composition:** section using Page Header (on `/timeline`) or a lighter inline heading (in the `/` bookend context) followed by the Timeline component.
+**Reusable composition:** `PageBackdrop` (circuit/grid texture) → Page Header → the Timeline component.
 **Product-specific:** only the two confirmed milestones (registration opens, event dates) currently have real dates; any additional milestone node renders via the Timeline's pending-date state, not an invented date.
-**Applies to:** `/timeline`, `/` (as a bookend section if the site's structure calls for it — see `site-structure.md`).
+**Applies to:** `/timeline` only. Removed from `/` per `context/decisions.md` DEC-006 — see the Timeline entry above.
 
 ### Prize Section
-**Reusable composition:** Prize Display component as defined above.
-**Product-specific:** exactly three confirmed prize tiers plus the confirmed total. No additional prize category (track prizes, special mentions) is rendered unless and until confirmed in `tbd.md` — at which point it uses the existing Standard Prize Card variant, not a new component.
-**Applies to:** `/prizes`, `/` (bookend section).
+**Reusable composition:** `PageBackdrop` (circuit/grid texture) → the Prize Display component, which owns its own bespoke two-column header (no separate Page Header — see `context/decisions.md` DEC-008).
+**Product-specific:** exactly three confirmed prize tiers plus the confirmed total. No additional prize category (track prizes, special mentions) is rendered unless and until confirmed in `tbd.md` — at which point it uses the existing Standard Prize Card treatment, not a new component.
+**Applies to:** `/prizes` only. Removed from `/` per `context/decisions.md` DEC-006 — see the Prize Display entry above.
 
 ---
 
@@ -387,7 +410,7 @@ Component-level implications of `ui-rules.md`'s accessibility rules (see that fi
 - **Labels:** every Form Field pairs its input with a real `<label>` — enforced at the Form Field level, not left to each page.
 - **ARIA use:** limited to where native semantics fall short (`aria-expanded` on FAQ Item, `aria-current` on Site Header's active link, dialog/drawer patterns) — not applied by default to every component.
 - **Status communication:** Badge, Status/Notification Banner, and Timeline milestone states all pair color with icon and/or text — this is a hard requirement on those three components specifically, since they're the components most likely to be color-only if built carelessly.
-- **Reduced motion:** Hero's entrance animation, FAQ Item's expand transition, and Mobile Navigation Drawer's open/close transition must all respect `prefers-reduced-motion`.
+- **Reduced motion:** Hero's entrance animation, FAQ Item's expand transition, and Mobile Navigation Drawer's open/close transition must all respect `prefers-reduced-motion`. Project-wide this is handled by `components/motion-provider.tsx` (`<MotionConfig reducedMotion="user">` in the root layout), which drops transform/layout animations while keeping opacity fades. **Do not gate markup on the `useReducedMotion()` hook** — the server has no media query and always resolves it `false`, so any structural branch on it (rendering element A vs. element B, or skipping a decorative child) hydration-mismatches for exactly the users it was meant to help. Use Tailwind's `motion-reduce:`/`motion-safe:` variants for anything that must change structurally, and confine the hook to post-mount effects. This was a real bug caught in Hero/EventGlance/Timeline, not a hypothetical.
 - **Minimum interactive target:** Mobile Navigation Drawer items and any touch-oriented control use at least a 44px tap target on mobile, per `ui-rules.md`.
 
 ---
@@ -400,8 +423,8 @@ Component-level implications of `ui-rules.md`'s accessibility rules (see that fi
 | Mobile Navigation Drawer | Full-height panel | Full-height panel | Not rendered |
 | Hero | Smallest heading step, stacked CTAs | Mid heading step | Full heading step, side-by-side CTAs |
 | Page Header | No structural change | No structural change | No structural change |
-| Prize Card / Prize Display | 1-column grid | 2-column grid | Up to 3-column grid |
-| Timeline | Vertical | Vertical | Horizontal (current 3-milestone count) |
+| Prize Card / Prize Display | 1 column (header above podium) | 1 column | 2-column (header + podium side by side, ≥1024px) — see Prize Display entry for why the header no longer uses the standard Page Header responsive rule |
+| Timeline | Vertical | Vertical | Vertical (no desktop variant — see Timeline entry) |
 | Form Field / Form Section | Full-width, single column | Single column | Single column, capped width |
 | Table | Stacked cards or horizontal scroll (per column count) | Same rule | Full table |
 | FAQ Item | No structural change | No structural change | No structural change |
@@ -476,12 +499,14 @@ Before creating a new reusable component, ask:
 | Focus Treatment | Primitive (style) | Active | Shared focus-visibility style | All interactive elements |
 | Site Header | Composed | Planned | Persistent public navigation | All public routes |
 | Mobile Navigation Drawer | Composed | Planned | Mobile-collapsed nav | All public routes |
-| Page Header | Composed | Planned | Standard non-hero page intro | All non-home routes |
-| Hero | Composed | Planned | Homepage's single high-impact intro | `/` only |
+| Page Backdrop | Composed | Active | Grid-texture-only page background (no aurora/glow) | `/timeline`, `/prizes` |
+| Page Header | Composed | Active | Standard non-hero page intro | `/timeline` only |
+| Hero | Composed | Active | Homepage's single high-impact intro | `/` only |
+| Event Glance | Composed | Active | Compact 3-fact homepage recap | `/` only |
 | FAQ Item / FAQ Accordion | Composed | Planned | Expandable Q&A row | `/faq` |
-| Timeline | Composed | Planned | Confirmed-milestone sequence display | `/timeline`, `/` |
-| Prize Card | Composed | Planned | Single prize tier display | `/prizes`, `/` |
-| Prize Display | Composed | Planned | Full prize section | `/prizes`, `/` |
+| Timeline | Composed | Active | Confirmed-milestone sequence display | `/timeline` only |
+| Prize Card | Composed | Active | Single isometric-block prize tier display (inlined in Prize Display) | `/prizes` only |
+| Prize Display | Composed | Active | Full prize section, incl. bespoke two-column header | `/prizes` only |
 | Empty State | Composed | Planned | "Genuinely no data" state | Content-bearing routes |
 | Pending Confirmation State | Composed | Planned | "Awaiting organizer confirmation" state | Any route with `tbd.md` content |
 | Form Field | Composed | Planned | Label + input + helper/error unit | `/register` |
@@ -492,8 +517,8 @@ Before creating a new reusable component, ask:
 | Public Information Page | Page Pattern | Planned | Header → content composition | `/about`, `/challenges`, `/rules`, `/faq` |
 | Public Registration Page | Page Pattern | Planned | Header → form composition (shell only) | `/register` |
 | Pending Information Section | Page Pattern | Planned | Reusable placement of Pending Confirmation State | Any route with `tbd.md` content |
-| Timeline Section | Page Pattern | Planned | Reusable placement of Timeline | `/timeline`, `/` |
-| Prize Section | Page Pattern | Planned | Reusable placement of Prize Display | `/prizes`, `/` |
+| Timeline Section | Page Pattern | Active | `PageBackdrop` → Page Header → Timeline | `/timeline` only |
+| Prize Section | Page Pattern | Active | `PageBackdrop` → Prize Display (header built in) | `/prizes` only |
 | Team components | Conditional | Conditional | — (see Conditional Components) | Conditional |
 | Participant dashboard components | Conditional | Conditional | — (see Conditional Components) | Conditional |
 | Submission components | Conditional | Conditional | — (see Conditional Components) | Conditional |

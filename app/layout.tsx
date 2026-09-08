@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Sora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Header } from "@/components/layout/header";
+import { MotionProvider } from "@/components/motion-provider";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -29,7 +31,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${sora.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
       style={{ colorScheme: "dark" }}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <MotionProvider>
+          <Header />
+          {children}
+        </MotionProvider>
+      </body>
     </html>
   );
 }

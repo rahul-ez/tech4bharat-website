@@ -104,7 +104,7 @@ The hero is the site's one deliberate "wow" moment — everything below is writt
 
 ## Page Headers
 
-Standard pattern for About, Challenges, Timeline, Prizes, Rules, FAQ, and Registration:
+Standard pattern for About, Challenges, Timeline, Rules, FAQ, and Registration:
 
 - **Eyebrow:** label typography, `text-muted`, uppercase — the page's section name only (e.g. "Rules & Eligibility"), not a marketing line.
 - **Heading:** page heading typography (not hero-display), `text-primary`.
@@ -114,7 +114,7 @@ Standard pattern for About, Challenges, Timeline, Prizes, Rules, FAQ, and Regist
 - **Spacing:** `space-8` between the header block and the first content section; `space-12`–`space-16` (section spacing) above the header from the page top.
 - **Background:** flat `background`/`surface` — no gradient, no glow, no full-bleed band.
 
-This pattern is intentionally quiet. If a page header starts to accumulate a CTA, a stat strip, or a background treatment, that's a sign it's drifting toward hero composition — which is explicitly reserved for the homepage.
+This pattern is intentionally quiet. If a page header starts to accumulate a CTA, a stat strip, or a background treatment, that's a sign it's drifting toward hero composition — which is explicitly reserved for the homepage, with one named exception: **`/prizes`** uses a bespoke two-column hero-style header (eyebrow, heading, supporting text, and a "Register Now" CTA on the left; the isometric prize podium on the right) instead of this pattern, per `context/decisions.md` DEC-008 — built to an explicit, direct "recreate this exactly" reference rather than a general license for other pages to add CTAs.
 
 ---
 
@@ -242,7 +242,7 @@ For future participant/admin interfaces.
 
 - **Milestone dot:** `radius-full`, `border` outline by default.
 - **Upcoming milestone:** dot fill `surface-tertiary`, connecting line `border-muted`, label `text-muted`.
-- **Active milestone:** dot fill `primary`, `glow-primary` applied as a static box-shadow (no pulsing/looping animation), label `text-primary`.
+- **Active milestone:** dot fill `primary`, `glow-primary` applied as a box-shadow, label `text-primary`. A live-pulse ring is permitted specifically here, per `context/decisions.md` DEC-006 — CSS-only, gated by `motion-reduce:`. No other milestone state pulses.
 - **Completed milestone:** dot fill `primary-muted` with a check icon in `primary`, connecting line solid `primary`, label `text-secondary`.
 - **Status is never color-only:** completed uses a check icon, active uses the glow plus current styling, upcoming uses neither — distinguishable in grayscale.
 - **Mobile layout:** vertical timeline, dot-and-line on the left, content to the right.
@@ -407,7 +407,7 @@ No new gradient or glow is introduced anywhere in the product without first bein
 ## Invariants
 
 1. Every color used in a component resolves to a CSS variable defined in `ui-tokens.md` — no raw hex/rgb anywhere in component code.
-2. The homepage hero is the only place the ignition-glow + circuit-texture combination and hero-display-heading typography appear together; the Prizes/closing-CTA sections may reuse glow tokens alone, never the texture or hero typography.
+2. The homepage hero is the only place the ignition-glow + circuit-texture combination and hero-display-heading typography appear together; a future closing-CTA band may reuse glow tokens alone, never the texture or hero typography. The circuit/grid texture (not the glow) is additionally permitted on `/timeline` and `/prizes` as page-level backdrops, per `context/decisions.md` DEC-006 — those two pages still never use the ignition glow, aurora, or hero-display-heading typography.
 3. No page other than the homepage uses hero-display-heading typography for its top heading.
 4. Every interactive element has a visible `:focus-visible` state using `border-focus`/`focus-ring`.
 5. Every badge/status indicator pairs color with an icon and/or text label, verifiable by inspecting the markup.

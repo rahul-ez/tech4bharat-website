@@ -64,3 +64,102 @@ Each of these is a real fork in a legitimate direction with no single "obvious" 
 
 **Impact:**
 `context/ui-tokens.md`, `app/globals.css`, `components/ui/button.tsx` (Destructive variant).
+
+---
+
+### DEC-004 — Hero visual richness expanded beyond original Motion restraint
+**Status:** Accepted
+**Date:** 2026-09-06
+**Owner:** Sam
+
+**Decision:**
+The original Motion section's restraint (no continuous/looping motion, no decorative elements, minimal glow) is relaxed specifically for visual richness and polish, per direct product decision — the site should be catchy and visually impressive, not just credible-and-restrained. The saffron/ember/navy color palette, Sora/Inter/JetBrains Mono typography, and overall professional tone remain locked and must not change. This does not authorize an unprofessional/playful aesthetic (bounce easing, neon colors, cluttered layouts) — richness within the existing palette and a premium tone, not a departure from it.
+
+**Reason:**
+Teacher/evaluator wants the UI to be visually rich and eye-catching; the original restraint was calibrated for a different priority.
+
+**Impact:**
+`ui-rules.md`'s Motion "Forbidden" list is no longer a hard limit for hero/landing-page visual treatment — still avoid generic AI-template clichés (purple gradients unrelated to our palette, italic serif hero text, cursor-follow glow) even while pushing richness.
+
+---
+
+### DEC-006 — Timeline and Prizes become standalone pages, not Landing sections; grid texture and one specific pulse extended to them
+**Status:** Accepted
+**Date:** 2026-09-07
+**Owner:** Sam
+
+**Decision:**
+Three related changes, made together:
+
+1. **Timeline and Prizes are removed from `/` entirely.** They exist only as their own dedicated pages (`/timeline`, `/prizes`), already reachable from the header nav. Landing keeps Hero + Event at a Glance (+ a closing CTA band, not yet built). The homepage versions built in the prior session (a compressed 3-column teaser strip for each) are superseded, not kept as a second "landing" variant — `components/public/timeline.tsx` was rewritten in place for its one remaining context (the dedicated page) rather than forked, and `components/public/prize-teaser.tsx` was deleted in favor of `components/public/prize-display.tsx`, which fulfills the already-registered "Prize Display" composed component (total pool + three Prize Cards) that the teaser never fully implemented (no total-pool stat, no podium emphasis).
+2. **The circuit/grid texture (not the aurora/ignition-glow) is extended to `/timeline` and `/prizes`.** `ui-tokens.md`'s Visual Effects table and Invariant 12, and `ui-rules.md`'s Invariant 2, all previously scoped this to "the hero section" (Invariant 12 already had a narrower "Prizes bookend section" exception that predates this decision and referred to a homepage bookend, not the now-standalone page). Explicit product instruction this round: use the grid only, not the moving aurora/glow — "it should distract too much." Both files' wording is updated to name `/timeline`/`/prizes` directly instead of the retired bookend framing.
+3. **Timeline's active-node pulse.** `ui-rules.md`'s Timeline section explicitly said "no pulsing/looping animation" on the active dot's glow. Per direct instruction this round, a live-pulse ring is added to the active milestone specifically. This is a narrower, more specific carve-out than DEC-004's general hero/landing relaxation — it targets one named restriction in one component — so it's logged separately here rather than assumed covered by DEC-004. The pulse is CSS-only (`@keyframes`, not a JS-driven loop) and gated by `motion-reduce:` so it stops entirely under reduced motion, consistent with Invariant 7's spirit even though the invariant's literal "no looping animation" is what's being carved out.
+4. **Small functional phase icons on Timeline nodes** (registration/online-preliminaries/grand-finale), always paired with the node's text label, never standing alone. `ui-tokens.md`'s Visual Effects table lists "Decorative icons/illustrations: Not used... Everywhere" — these are framed as functional wayfinding (same category as the existing completed-state check icon `ui-rules.md` already sanctions), not decoration, but the row's wording is broadened slightly to record the exception rather than leave it silently contradicted.
+5. **Timeline's responsive shape changes.** With no homepage-compressed context left to serve, the previously documented "vertical mobile/tablet, horizontal desktop" behavior is retired in favor of a single vertical layout at all breakpoints, sized and spaced for a real page rather than a homepage strip.
+
+**Reason:**
+The homepage was carrying three consecutive sections (Event at a Glance, Timeline, Prizes) with near-identical shape — a left heading plus a row of three cards — while `/timeline` and `/prizes` already existed as real, confirmed, nav-linked routes doing nothing. Every fact the Timeline/Prize teasers showed was already stated elsewhere on the page (Hero's stat strip, Event at a Glance) with better context (Timeline had status/sequence; Prizes had nothing extra at all). Moving them to their own pages removes the redundancy and gives each the "real page-level composition, room to breathe" a dedicated page deserves, rather than a cropped card row.
+
+**Impact:**
+`app/page.tsx` (Timeline/Prizes removed), `app/timeline/page.tsx` and `app/prizes/page.tsx` (new), `components/public/timeline.tsx` (rewritten), `components/public/prize-teaser.tsx` (deleted) → `components/public/prize-display.tsx` (new), `components/public/page-header.tsx` (new — fulfills the previously-Planned "Page Header" registry entry, now used by both new pages), `context/ui-rules.md` (Invariant 2, Timeline section's pulse line), `context/ui-tokens.md` (Visual Effects table's grid-texture row, Invariant 12, the decorative-icons row), `context/ui-registry.md` (Timeline/Prize Card/Prize Display/Page Header entries and the Responsive Registry).
+
+---
+
+### DEC-007 — A bespoke animated signature illustration for /prizes' 1st place, exclusively
+**Status:** Accepted
+**Date:** 2026-09-07
+**Owner:** Sam
+
+**Decision:**
+A hand-built, animated wireframe gem/polyhedron icon is added above the 1st-place marker on `/prizes`, per direct reference images and an explicit request ("the big winning icon... if u can render it like that with a good animation"). This is a materially different kind of exception than DEC-006's Timeline phase icons: those were small, always paired with a text label, functioning as wayfinding. This is a large, purely decorative signature graphic with no textual pairing requirement — closer to the "illustration" `ui-tokens.md`'s Visual Effects table rules out than to an icon, so it doesn't fit under DEC-006's carve-out and needs its own entry rather than being read into it. The two earlier Prize Display iterations this session (a plain 3-card grid, then a boxed ascending-bar podium) are both retired, not kept as fallbacks — the second one was explicitly rejected as too dense, with too little whitespace, prompting this pass. Boxed/carded containers for the three tiers are dropped entirely in favor of floating dot-and-line markers at staggered heights with no background fill, which is most of what actually fixes the whitespace complaint — the gem is the specific enhancement on top of that fix, not a substitute for it.
+
+The gem is drawn as inline SVG geometry (a hexagon "girdle" with a top and bottom apex, faceted with alternating crown/pavilion lines) using only `primary`/`border-muted` — no new hue. Rotation is a real CSS 3D transform (`perspective` + `rotateY` via `@keyframes`), not an image asset or a new animation library. Gated behind `motion-safe:`/`motion-reduce:` like every other continuous animation on the site; a static angled view ships for reduced-motion users rather than nothing.
+
+**Reason:**
+The prior podium redesign was rejected on direct, specific feedback (whitespace, wanting the "big icon" treatment specifically) — not a vague "try again," so the fix responds to the actual named complaints rather than iterating blindly on the rejected direction.
+
+**Impact:**
+`components/public/prize-display.tsx` (rewritten again), `app/globals.css` (`--animate-gem-spin` keyframe), `context/ui-tokens.md` (the decorative-icons/illustrations row gets a second, narrower carve-out), `context/ui-registry.md` (Prize Card/Prize Display entries). This does not authorize decorative illustration anywhere else in the product — it's scoped to this one element on this one page, same as DEC-006's icon carve-out was scoped to Timeline specifically.
+
+---
+
+### DEC-008 — `/prizes` gets a bespoke two-column hero-style header with a CTA, and the tier markers become literal isometric 3D blocks
+**Status:** Accepted
+**Date:** 2026-09-07
+**Owner:** Sam
+
+**Decision:**
+Fourth Prize Display pass this session, against a direct reference image and the explicit instruction "recreate this EXACTLY... no compromises":
+
+1. **`/prizes` no longer renders `PageHeader`.** In its place, `PrizeDisplay` now owns a bespoke two-column composition: left column carries the eyebrow ("Prize Pool"), an `h1` ("Rewarding what matters" — this exact wording was authored by the user directly in their request, not sourced from the reference image, so it is not treated as invented content), supporting copy, and a "Register Now" CTA button linking to `/register`; the right column holds the podium visual. `ui-rules.md`'s Page Headers section names this precise pattern as a drift signal ("If a page header starts to accumulate a CTA, a stat strip, or a background treatment, that's a sign it's drifting toward hero composition — reserved for the homepage"). This is a deliberate, named exception for `/prizes` specifically, made on explicit "exactly like the reference" instruction, not a silent violation — `PageHeader` remains the standard for every other non-homepage page and is now used only by `/timeline`.
+2. **The three tiers are literal isometric 3D blocks**, not cards or floating dot markers (both prior iterations are superseded). Each block is real CSS 3D — a `preserve-3d` container with three child faces (front, top, side), each positioned so its own center coincides with the block's shared geometric pivot, then rotated and pushed outward via `translateZ` by half the block's size along that face's axis (the standard technique for building CSS-3D box faces from one shared pivot, rather than each face hinging from its own edge — the edge-hinge approach was tried first and produced an invisible or badly misplaced top face, confirmed by actual computed-style inspection and screenshots, not assumed). The whole podium group sits in a `perspective` + `rotateX`/`rotateY` tilted wrapper — critically, a **separate, non-animated** wrapper: Motion writes its entrance-rise as an inline `transform` style on whichever element it animates, which silently overwrites a Tailwind `transform` utility class placed on that same element (inline style beats any class), so the isometric tilt had to move to an inner div that Motion never touches. Face colors stay within existing tokens (`surface-secondary` front, `border-light`/`primary-light` top, `surface` side) — no new hue. 1st place additionally gets `border-primary` + `shadow-glow-primary`, matching the featured treatment used elsewhere. The DEC-007 wireframe gem carries over unchanged (same keyframe, same component), repositioned above the new 1st-place block.
+3. **Two omissions from the reference, communicated to the user before building, not silently applied:** the vertical "BUILD / SOLVE / INNOVATE / IMPACT" tagline list is left out as invented positioning copy with no basis in `project-overview.md`/`tbd.md`; "See Prize Breakdown" (which doesn't function as a CTA on the page that already is the breakdown) is replaced with "Register Now", a real action.
+
+**Reason:**
+Direct, repeated "recreate this exactly" instruction against a specific reference, following three earlier rounds of iteration on this same section. The two content deviations are held to the project's standing "never invent hackathon information" rule even under an "exactly, no compromises" instruction, since that rule is about factual/promotional content, not visual layout — the visual language (two-column layout, isometric blocks, gem placement) is followed exactly as shown.
+
+**Impact:**
+`components/public/prize-display.tsx` (rewritten again — two-column layout, `PodiumBlock`, isometric face geometry), `app/prizes/page.tsx` (`PageHeader` usage removed), `context/ui-rules.md` (Page Headers section gets a named `/prizes` exception), `context/ui-registry.md` (Prize Card/Prize Display entries rewritten again; Page Header's "Relevant routes" narrowed to `/timeline` only). Does not authorize hero-style headers or CTAs on any other non-homepage page — scoped to `/prizes` alone, per this specific "exactly like the reference" instruction.
+
+---
+
+### DEC-009 — Isometric podium scrapped for a mountain-range waveform with three rising rank markers; DEC-007's gem retired
+**Status:** Accepted
+**Date:** 2026-09-08
+**Owner:** Sam
+
+**Decision:**
+Fifth Prize Display pass this session. DEC-008's isometric-block podium is scrapped entirely — not iterated on — per direct instruction against a new reference image, replaced with:
+
+1. **A mountain-range/waveform SVG silhouette** spanning the full width of the visual, built from a single hand-authored path with three distinct peaks (each separated by a valley, not one smooth hill) at x = 22%/50%/78% of the viewBox, using only `primary` (low-opacity fill gradient) and `border-light` (stroke) — no new hue.
+2. **Three vertical rank markers** (label, amount, dot, connecting line), one rising from each peak. Each marker's line lands exactly on its peak — not floating above it with a gap — because each marker carries its own precomputed `peakBottom` offset (derived from the waveform SVG's fixed rendered height and that peak's y-coordinate in the viewBox), rather than all three sharing one positioning wrapper. 1st place is visually dominant via both the tallest line and the largest/glowing dot, matching the reference. Only placement + amount are shown under each marker — the reference's descriptive taglines ("Most impactful solution...", "Ideas with strong execution...") are invented judging-criteria framing with no basis in `tbd.md`, so they're omitted; placement and amount are the only facts honestly confirmed.
+3. **Vertical accent text** on the right (desktop/`lg`+ only — hidden narrower, since it's purely atmospheric and doesn't fit a compressed layout), reading "Scalable / Innovations / Next-Gen / India" stacked via `writing-mode: vertical-rl`. This is `project-overview.md`'s confirmed theme string ("Scalable Innovations for Next-Gen India" — already used verbatim in Hero) split into its four words, not the reference image's own wording ("PEOPLE / IDEAS / TECHNOLOGY / A STRONGER BHARAT"), which is itself unconfirmed invented copy.
+4. **The DEC-007 wireframe gem is retired**, not carried over. It floated specifically above the now-gone podium's 1st-place block; the new reference doesn't include an equivalent element, and nothing in this round's request asked for it to persist. `ui-tokens.md`'s decorative-icons/illustrations exception list loses its narrower (2) entry as a result — only the Timeline phase-icon exception (DEC-006) remains.
+5. **Entrance animation, verified rather than assumed:** the waveform and marker group are plain `motion.div`s with no `whileInView` of their own — a single ancestor `motion.div` declares `initial="hidden" whileInView="show" viewport={{ once: true }}`, and Motion's variant propagation carries that state down to both children (and the marker group's individual markers below that), each applying its own transition. This guarantees one shared trigger point rather than two independently-observed viewport thresholds that could drift. Verified two ways: (a) sampling computed opacity of the waveform vs. the 1st-place marker across the first ~2s after scroll-into-view confirmed the waveform reaches full opacity (~400ms) well before the marker starts appearing (~700–900ms) — genuine sequencing, not simultaneous; (b) comparing computed opacity/transform immediately after the first reveal against two further scroll-away-and-back cycles (including one that scrolls well past the section first) showed byte-identical values every time — confirms the entrance truly fires once and does not replay.
+6. **A real layout bug caught and fixed before shipping:** the first attempt sized the waveform/marker container with `min-h-[280px]`, far shorter than the 1st-place marker's actual rendered extent (peak offset + line + label/amount/dot stack, ≈415px). This didn't visibly break the 1440px screenshot (enough natural gap above absorbed the overflow) but did overlap the "Register Now" button at 375px, where the wrapped 2-line heading left less clearance. Found via computed `getBoundingClientRect()` inspection (not visual guesswork alone) and fixed by sizing the container to the marker's actual measured extent (`min-h-[440px] sm:min-h-[480px]`).
+
+**Reason:**
+Direct instruction to scrap the podium concept entirely and rebuild against a new reference, with explicit, itemized requirements (waveform construction, marker composition, no invented taglines, theme-derived accent text, one-time staggered entrance) rather than a vague "try again."
+
+**Impact:**
+`components/public/prize-display.tsx` (rewritten again — `Waveform`, `Marker`, theme-word accent column; `PrizeGem`/`PodiumBlock` removed), `context/ui-tokens.md` (decorative-icons/illustrations exception list loses its DEC-007 entry), `context/ui-registry.md` (Prize Card/Prize Display entries rewritten again), `context/progress-tracker.md`. Per the user's explicit instruction this round, spacing/CTA/nav-active-state fixes mentioned as still pending are deliberately **not** addressed in this pass — this decision covers only the visual-direction rebuild.

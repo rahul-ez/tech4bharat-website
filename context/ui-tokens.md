@@ -404,9 +404,9 @@ The system is one responsive transformation of the same tokens — mobile is not
 | Radial ignition glow (the one approved gradient) | Hero section background only, using `primary`/`ember` at very low opacity fading into `background` | Any other section, any card, any button | Carries the poster's "ignition" feeling into the product without making gradients a base surface treatment site-wide |
 | `glow-primary` / `glow-ember` (box-shadow glow) | Active timeline milestone, "live" badges, first-place prize card border, focus ring | Static cards, buttons at rest, body content, navigation | Signals "this is active/important right now" — loses meaning if applied decoratively |
 | `shadow-elevation` | Modals, dropdowns, popovers — anything floating above the page | Static cards, page sections | Dark UIs communicate elevation through layered surface tokens; shadow is reserved for things that are literally floating |
-| Subtle circuit/grid line texture | Hero background only, beneath the ignition glow, at very low opacity | Anywhere text-heavy (Rules, FAQ, forms) | Reinforces the technology-forward feel at the one moment spectacle is appropriate, without adding visual noise to functional pages |
+| Subtle circuit/grid line texture | Hero background, beneath the ignition glow. Also permitted alone (no glow/aurora) as a page-level backdrop on `/timeline` and `/prizes`, per `context/decisions.md` DEC-006 | Anywhere text-heavy (Rules, FAQ, forms) | Reinforces the technology-forward feel at moments spectacle is appropriate, without adding visual noise to functional pages |
 | Background imagery | Hero only | Any other page | Keeps the site feeling like a product, not a poster reproduced page after page |
-| Decorative icons/illustrations | Not used | Everywhere | The system deliberately relies on color, type, and restraint rather than illustrative decoration |
+| Decorative icons/illustrations | Not used as decoration, with one narrow, named exception: small functional icons naming a Timeline node's phase (registration/prelims/finale), always paired with the node's text label, never standing alone, per `context/decisions.md` DEC-006. DEC-007's bespoke `/prizes` wireframe gem was retired per DEC-009 — the podium it floated above was scrapped, and the replacement waveform/marker design doesn't include an equivalent element | Anywhere else in the product | The system relies on color, type, and restraint rather than illustrative decoration; the remaining exception is scoped to Timeline specifically, not a general license |
 
 ---
 
@@ -434,5 +434,5 @@ The system is one responsive transformation of the same tokens — mobile is not
 9. Public pages and participant/admin pages must share the same design language — same tokens, same accent logic, denser spacing only where functionally justified.
 10. New visual patterns must be evaluated against existing tokens before anything new is added to this file.
 11. If a component needs a value that doesn't exist here, update this token system first — never hardcode locally as a workaround.
-12. Only the hero section (and the Prizes/closing-CTA bookend sections, per site-structure.md) may use background imagery, the ignition glow, or the circuit texture.
+12. Only the hero section may use background imagery or the ignition glow. The circuit texture is additionally permitted, alone, as a page-level backdrop on `/timeline` and `/prizes`, per `context/decisions.md` DEC-006.
 13. `primary` and `ember` are never both used at full saturation as dominant colors in the same region of a screen.
