@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Sora, Inter, JetBrains_Mono } from "next/font/google";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
-import { Header } from "@/components/layout/header";
 import { MotionProvider } from "@/components/motion-provider";
 
 const sora = Sora({
@@ -21,7 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Tech4Bharat 2026",
-  description: "Scalable Innovations for Next-Gen India — India's Biggest Hackathon.",
+  description:
+    "Scalable Innovations for Next-Gen India — India's Biggest Hackathon.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -33,8 +34,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <MotionProvider>
-          <Header />
-          {children}
+          <Navbar />
+          <main className="flex-1">{children}</main>
         </MotionProvider>
       </body>
     </html>
