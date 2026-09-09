@@ -163,3 +163,92 @@ Direct instruction to scrap the podium concept entirely and rebuild against a ne
 
 **Impact:**
 `components/public/prize-display.tsx` (rewritten again — `Waveform`, `Marker`, theme-word accent column; `PrizeGem`/`PodiumBlock` removed), `context/ui-tokens.md` (decorative-icons/illustrations exception list loses its DEC-007 entry), `context/ui-registry.md` (Prize Card/Prize Display entries rewritten again), `context/progress-tracker.md`. Per the user's explicit instruction this round, spacing/CTA/nav-active-state fixes mentioned as still pending are deliberately **not** addressed in this pass — this decision covers only the visual-direction rebuild.
+
+---
+
+### DEC-010 — Grid/circuit texture becomes a site-wide default background, not a Hero/Timeline/Prizes-only treatment; two bespoke network-graphic visuals added to `/about`
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+Two related changes, made together per direct instruction:
+
+1. **`PageBackdrop`'s circuit/grid texture (no aurora/glow) is now the default background for every page**, not a narrow exception scoped to `/timeline` and `/prizes`. DEC-006 introduced the grid as a carve-out for those two pages specifically, with `ui-tokens.md`'s Visual Effects table and `ui-rules.md`'s equivalent row explicitly naming "Rules, FAQ, forms" as places the texture must NOT appear. That restriction is superseded here, not merely narrowed further — the texture becomes the site's standard page-level backdrop, and `PageBackdrop` is now expected to wrap every route's content rather than being an opt-in per page. This is recorded as its own entry rather than an amendment to DEC-006 so the history of "why" is preserved: DEC-006's original reasoning (grid = hero-adjacent spectacle, kept off text-heavy pages) is the thing being overturned, not extended.
+2. **Two bespoke "network graphic" visuals are added to `/about`**, per a direct reference image: `components/public/network-graphic.tsx` exports `IndiaNetworkMap` (used in the "What is Tech4Bharat" section) and `GlobalNetworkGlobe` (used in the GAVS 2026 section), sharing common `NetworkDot`/`NetworkArc` pieces so both read as one consistent visual system at two scales — a stylized/simplified India outline zooming out to a wireframe globe — rather than two unrelated graphics. Per DEC-006/DEC-007's precedent, hand-authored decorative SVG illustration is otherwise not used in this product; this is a further named exception, scoped to these two specific elements on `/about` only, not a general license. Neither map is cartographically precise — both are stylized silhouettes, the same creative latitude already taken for Prize Display's mountain waveform (DEC-009).
+
+   The India map's dots sit at approximate positions for Delhi, Mumbai, Kolkata, Chennai, and Bengaluru, with connecting arcs from each to Bengaluru specifically — Bengaluru is the one city-level location actually confirmed in `tbd.md` (the grand-finale city), so it's treated as the visual "hub" the arcs converge on. No venue name, city label, or claim about these cities' role in the hackathon is rendered as text — the map is decorative geography, not an assertion of fact. The globe reuses the same dot/arc/glow language at a "zoomed out" scale, radiating from a single India-position dot, evoking GAVS's global framing without asserting anything about specific countries or partners not confirmed anywhere.
+
+   Both graphics use only `primary`/`border-light`/`ember` at existing opacities — no new hue. Entrance is a one-time reveal (fade+rise for the whole graphic, then a staggered dot pop-in, then a staggered arc fade-in — each stage using the same `motion.div`-with-propagated-variants technique verified for Prize Display's waveform/markers in DEC-009, not independently observed viewport triggers). A literal `pathLength`/stroke-draw animation for the arcs was deliberately not used: Motion's `reducedMotion="user"` config (this project's one accessibility mechanism for continuous/entrance motion) is documented to cover transform and opacity animations, not SVG `pathLength`, and introducing an animation type outside that already-verified-safe mechanism was judged not worth the accessibility risk for a purely decorative flourish — a staggered opacity fade-in on the arcs reads as "connections lighting up in sequence," which satisfies the spirit of "draw-in" without the gap.
+
+**Reason:**
+Direct instruction: the grid texture "should be the whole site's background," not something each page re-decides, and the About page's reference image called for a specific, cohesive network-graphic visual system spanning both its map-scale and globe-scale sections.
+
+**Impact:**
+`context/ui-tokens.md` (Visual Effects table's grid-texture row rewritten — no longer names Rules/FAQ/forms as an exclusion), `context/ui-rules.md` (the equivalent row and Invariant 2's hero-only framing updated), `context/ui-registry.md` (`PageBackdrop`'s "Relevant routes" updated to all public routes; new `IndiaNetworkMap`/`GlobalNetworkGlobe` entries), `app/about/page.tsx` (wrapped in `PageBackdrop`; two sections restructured to hold the new visuals), `components/public/network-graphic.tsx` (new). Applying `PageBackdrop` to `/challenges`, `/faq`, `/register`, `/rules` is covered by this same decision but tracked as a separate, immediately-following implementation step per the user's request to review `/about` first.
+
+---
+
+### DEC-011 — India outline replaced with real geographic data (react-simple-maps + d3-geo + topojson-client + world-atlas), after the hand-authored version was flagged as geographically wrong
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+DEC-010's `IndiaNetworkMap` shipped with a hand-authored SVG path meant to evoke India's outline — a stylized-silhouette approach with real precedent in this codebase (Prize Display's mountain waveform, DEC-009). Direct correction: the shape didn't actually resemble India and read as invented rather than stylized. Per explicit instruction, the outline (and the globe's landmass, for the same reason) is now sourced from real boundary data rather than freehand-drawn from memory:
+
+1. **New dependencies**: `react-simple-maps`, `d3-geo`, `topojson-client`, `world-atlas` (plus their `@types/*` packages). `world-atlas` ships pre-built TopoJSON — `countries-50m.json` (all countries, ISO-numeric-keyed) and `land-110m.json` (merged world landmass) — extracted via `topojson-client`'s `feature()`.
+2. **The extraction happens server-side, in `lib/geo.ts`** (`getIndiaFeature()`, `getWorldLandFeature()`), not inside the "use client" `network-graphic.tsx`. `countries-50m.json` is ~750KB; importing it directly into a client component would bundle the entire world's country data to every visitor for the sake of rendering one country. `app/about/page.tsx` (a Server Component) calls these functions and passes only the small resulting `Feature` objects as props — confirmed empirically, not assumed, by grepping the built `.next/static/chunks/*.js` output for a distinctive string ("Afghanistan") that would only be present if the raw world data had leaked into client JS; it wasn't found.
+3. **Rendering uses `react-simple-maps`' actual components** (`ComposableMap`, `Geographies`, `Geography`, `Sphere`, `Graticule`), not a hand-rolled path built from the extracted GeoJSON. Getting this right required reading react-simple-maps' own source (`node_modules/react-simple-maps/dist/core/index.cjs.js`) rather than assuming its API from memory: passing a `projection` *string* (e.g. `"geoMercator"`) routes through react-simple-maps' own translate/rotate/scale wiring, which has no way to reach `d3-geo`'s `.fitSize()` (needed to center/scale the India map to its own bounding box) or `.clipAngle()` (needed on the globe to hide back-hemisphere geometry) — passing a *projection instance* instead bypasses that wiring entirely and is used as-is, which is what both `IndiaNetworkMap` and `GlobalNetworkGlobe` now do. Also discovered from source, not docs: `Geographies`' `geography` prop must receive an array of Features (`[feature]`), not a bare `Feature` — passing one directly hits a `.map()` call on a non-array internally and throws.
+4. **The globe now renders the real world landmass** via `geoOrthographic()` rotated to center India (`rotate: [-82, -21, 0]`), with `react-simple-maps`' own `<Sphere>` (outline) and `<Graticule>` (real curved lat/long lines, not the hand-drawn squashed ellipses from the first version) — both automatically respect the projection's `.clipAngle(90)`, so the far hemisphere doesn't render distorted geometry.
+5. **`NetworkDot`/`NetworkArc` and the whole entrance-animation system are unchanged** — per explicit instruction ("those were fine"), only the outline/landmass source was replaced. City/globe-point coordinates changed from hand-picked pixel positions to real `[longitude, latitude]` pairs (Delhi, Mumbai, Kolkata, Chennai, Bengaluru for the map; London, Dubai, Singapore, Tokyo for the globe — chosen only for being visible from the chosen orthographic rotation), projected through the real projection instance via `Geographies`' render-prop `projection` function rather than hardcoded.
+
+**Reason:**
+A hand-invented country silhouette is a factual-accuracy problem, not a stylistic one — unlike the mountain waveform (which was never claiming to be a real place), an "India map" that doesn't look like India undermines the one thing the graphic is supposed to communicate. Direct correction, fixed with real data rather than a closer freehand attempt.
+
+**Impact:**
+`lib/geo.ts` (new), `components/public/network-graphic.tsx` (rewritten — real projections replace hand-authored path/coordinate constants), `app/about/page.tsx` (now calls `getIndiaFeature()`/`getWorldLandFeature()` and passes them as props), `package.json`/`package-lock.json` (four new runtime dependencies, three new `@types/*` dev dependencies), `context/library-docs.md` (new adopted-library entry), `context/ui-registry.md` (India Network Map / Global Network Globe entry updated to describe the real-data implementation).
+
+---
+
+### DEC-012 — `TextReveal`: the Hero/Timeline text-entrance pattern extracted into a single reusable primitive
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+Hero (`components/public/hero.tsx`) and Timeline (`components/public/timeline.tsx`) each independently hand-rolled the same fade+rise scroll-entrance pattern for their text — same `EASE_OUT` cubic-bezier (`[0.22, 1, 0.36, 1]`), same 0.6s per-element duration, staggering in the same ~0.08–0.16s neighborhood (Hero: `staggerChildren: 0.09`/`delayChildren: 0.08`; Timeline: `0.16`/`0.1`) — confirmed by reading both files rather than assumed. Per direct instruction, this is extracted into one reusable component, `components/ui/text-reveal.tsx`, rather than left duplicated a third time on `/about`.
+
+`TextReveal` adds one capability Hero/Timeline didn't have: per-word staggering (`split="word"`) for headings, on top of the existing whole-block fade+rise (`split="none"`, the default) for paragraphs — one component serves both, per explicit instruction not to build two. `as` is restricted to a small set of tags (`div`/`span`/`p`/`h1`–`h4`) resolved via a static object lookup of Motion's own pre-built `motion.h1`/`motion.div`/etc. — an earlier attempt used `motion.create(as)` called inside the component body to support an arbitrary `as` prop, which ESLint's `react-hooks/static-components` rule correctly flagged: creating a component during render resets its internal state on every re-render. The static lookup avoids the anti-pattern entirely since nothing is created at render time, only selected from already-stable references.
+
+`once: true` on the `whileInView` trigger is hardcoded, not exposed as a configurable prop — deliberately, given how many times a replaying/scroll-linked entrance has been a real bug this session (Timeline's spine was originally continuously `useScroll`-linked; Prize Display's waveform/markers and the About page's network graphics both needed explicit post-hoc verification their entrances don't replay). Verified for `TextReveal` itself on its first real usage, not assumed safe by extension: computed per-word opacity sampled at short intervals after a fresh load showed genuine staggering (not simultaneous), and computed opacity/transform for both a word-split heading and a block paragraph came back byte-identical across two scroll-away-and-back cycles (including one scrolling past the whole page first) compared against their state immediately after first reveal.
+
+Applied to `/about`'s headings and key text blocks (the hero intro, "What is Tech4Bharat", the theme statement, and the GAVS section) as the first real usage. Hero and Timeline's own existing implementations were **not** retrofitted onto `TextReveal` this round — they already work correctly, and the ask was to extract the pattern and prove it on new usage, not refactor every existing usage in the same pass. Whether to retrofit them, plus Challenges/FAQ/Register/Rules, is an open scoping question — see `context/progress-tracker.md`.
+
+**Reason:**
+Two independent hand-rolled copies of the same animation pattern is exactly the kind of duplication `code-standards.md` asks to avoid once a pattern repeats; a third copy on `/about` would have made that worse rather than better.
+
+**Impact:**
+`components/ui/text-reveal.tsx` (new), `app/about/page.tsx` (headings/paragraphs now use `TextReveal`), `context/ui-registry.md` (new Primitive Components entry). Does not change `components/public/hero.tsx` or `components/public/timeline.tsx` — both are unmodified.
+
+---
+
+### DEC-013 — `/challenges` redesigned: grid backdrop, `TextReveal`, a connected-step approach sequence, and the first real `Pending Confirmation State`
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+`/challenges` (previously a plain flat-navy page with a one-off "Coming Soon" card, built by the teammate) is rebuilt against several direct reference images, with one explicit exclusion:
+
+1. **The four-sector icon-card layout from two of the references (Sustainable Development / Inclusive Growth / Education & Skills / Healthcare Access) is not used, anywhere.** Both "Problem statements" and "Challenge tracks" are listed Not Confirmed in `tbd.md`; naming specific sectors would be inventing challenge categories that don't exist yet, not a styling choice. This was flagged as off-limits before building, not discovered after the fact.
+2. **In its place, a numbered "approach" sequence** (`components/public/approach-steps.tsx`) — Understand → Ideate → Build → Create Impact — describing the process every team follows, not a set of problem categories. Built as the connected-step variant (numbered circles + a one-time-drawn connecting line) rather than the plain unconnected list, per direct instruction and DEC-004's visual-richness allowance; collapses to an unconnected vertical stack below `md`, where a horizontal connector doesn't compress well.
+3. **`PageBackdrop` (the grid texture, DEC-010) and `TextReveal` (DEC-012)** are both applied here — the grid as this round's next step in DEC-010's site-wide rollout, `TextReveal` on the hero eyebrow/heading/paragraph and the approach section's heading/copy, its second real usage after `/about`.
+4. **`Pending Confirmation State` gets its first actual implementation** (`components/public/pending-confirmation-state.tsx`), replacing the page's old hand-rolled "Coming Soon" card. It was registered in `ui-registry.md`/`ui-rules.md` with a specific spec (dashed `border-muted`/`surface-muted` card + `warning` Badge reading "Pending confirmation" + heading + one sentence) but had no code — this builds exactly that spec rather than continuing the one-off card or inventing a new pattern. The existing accurate copy ("Official Challenge Statements... will be published once officially confirmed by the Tech4Bharat 2026 organizers") is preserved essentially verbatim, per instruction, as the `heading`/`message` passed in.
+5. **A closing tagline strip** ("Real Problems. Real Solutions.") was added for visual richness, matching a treatment shown in the connected-step reference — generic, makes no claim about tracks, judging, or categories.
+
+**Reason:**
+Direct instruction to redesign the page against specific references, with an explicit, named exclusion (the sector cards) called out before implementation rather than caught in review.
+
+**Impact:**
+`app/challenges/page.tsx` (rewritten), `components/public/approach-steps.tsx` (new), `components/public/pending-confirmation-state.tsx` (new — the first real "Pending Confirmation State"), `context/ui-registry.md` (Pending Confirmation State and Pending Information Section flipped Planned → Active; new Approach Steps entry; `TextReveal`'s relevant-routes note updated). Does not touch FAQ/Register/Rules — those remain open per DEC-010/DEC-012's tracked-separately notes.

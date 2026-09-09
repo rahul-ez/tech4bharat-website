@@ -159,6 +159,18 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Purpose:** Not a rendered component — the shared focus-visibility style (`border-focus` + `focus-ring`) applied uniformly across every interactive primitive above.
 - **Notes:** Documented here so it isn't reinvented per-component. Implemented as a shared utility class/style, not a React component.
 
+### TextReveal
+- **Status:** Active — `components/ui/text-reveal.tsx`
+- **Purpose:** The single reusable one-time scroll-entrance wrapper for text content — extracted from the fade+rise pattern Hero and Timeline had each hand-rolled independently (same `EASE_OUT` cubic-bezier `[0.22, 1, 0.36, 1]`, same 0.6s per-element duration, same ~0.08–0.16s stagger neighborhood, confirmed by reading both files rather than assumed). Intended to replace ad hoc `motion.h1`/`motion.p`+`Variants` blocks for new text entrances going forward, though Hero/Timeline's own existing implementations were not retrofitted onto it this round (see Notes).
+- **Use when:** Any heading or paragraph that should fade+rise in once on scroll into view. `split="word"` for headings (staggers each word — reads as a staggered word/line reveal); the default `split="none"` for body paragraphs (fades+rises as one block, no per-word stagger) — one component serves both, not two.
+- **Do not use when:** Content that's part of a larger, already-orchestrated `motion.ol`/`motion.div` stagger group with its own shared trigger (e.g. Timeline's node list, Prize Display's marker group) — introducing a second independent `whileInView` trigger inside an already-propagating variant tree would risk exactly the kind of drift DEC-009's "one shared trigger" fix was written to avoid. Use plain `motion.li`/`motion.g` with inherited variants there instead, as those components already do.
+- **Composition:** `split="word"` splits `children` (must be a plain `string` in this mode — enforced by a discriminated prop type, not a runtime check) on spaces and wraps each word in its own `motion.span`, inside an outer container element (`as`) driving `staggerChildren`/`delayChildren`. `split="none"` renders `as` directly as a single fade+rise unit, with `delayChildren` repurposed as that unit's own entrance delay (for cascading several `TextReveal`s that enter together — e.g. eyebrow, then heading, then paragraph — the same way Hero staggers its own block-level children). `as` is restricted to a small fixed set of tags (`div`/`span`/`p`/`h1`–`h4`) resolved via a static lookup of Motion's own pre-built `motion.h1`/`motion.div`/etc. components, not `motion.create()` called per-render — calling `motion.create()` inside the render body was tried first and caught by the `react-hooks/static-components` ESLint rule (it resets the created component's state on every re-render); the static lookup avoids that entirely since nothing is created at render time, only selected.
+- **Responsive behavior:** No structural change — the underlying text/heading element's own responsive classes (font-size steps, etc.) are untouched; `TextReveal` only adds the entrance behavior via `className`/`variants`, never repositions or resizes content.
+- **Accessibility requirements:** `once: true` on the `whileInView` trigger is hardcoded, not exposed as a prop — every consumer gets the same one-time guarantee, since a recurring bug this session was animations quietly re-triggering on scroll (Timeline's spine used to be continuously `useScroll`-linked; Prize Display and the About page's network graphics both needed explicit verification their entrances don't replay). Reduced motion is handled the same way as everywhere else — `MotionConfig`'s `reducedMotion="user"` (global, via `components/motion-provider.tsx`) drops the `y` transform after hydration while keeping the opacity fade; nothing here branches on `useReducedMotion()` for structure. Verified on its first real usage (About page), not assumed from the pattern alone: (1) computed per-word opacity sampled at short intervals after a fresh page load showed genuine staggering — word 1 reaches ~0.98 opacity while word 7 is still at 0 in the same frame, not simultaneous; (2) computed opacity/transform for both a `split="word"` heading and a `split="none"` paragraph, compared immediately after their first reveal against two further scroll-away-and-back cycles (including one scrolling past the whole page first), came back byte-identical every time — confirmed neither replays.
+- **Token/rule dependencies:** No new tokens — consumes whatever typography/color classes the caller passes via `className`, same as `motion.h1`/`motion.p` did directly before extraction.
+- **Relevant routes:** `/about`, `/challenges`. Not yet retrofitted onto Hero/Timeline's own existing hand-rolled implementations, or onto FAQ/Register/Rules — see `context/decisions.md` for the reasoning and `progress-tracker.md` for what's still open.
+- **Notes:** Hero and Timeline's own text entrances were deliberately left as-is this round rather than refactored onto `TextReveal` — they already work correctly and doing so wasn't asked for; the extraction was scoped to "pull the pattern into a reusable component and prove it on new usage," not "retrofit every existing usage in the same pass."
+
 ---
 
 ## Composed Components
@@ -186,12 +198,12 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 
 ### Page Backdrop
 - **Status:** Active — `components/public/page-backdrop.tsx`
-- **Purpose:** The circuit/grid texture as a full-page decorative background, without the aurora/ignition-glow. The only mechanism through which the grid texture is allowed to appear outside the Hero.
-- **Use when:** `/timeline`, `/prizes` — the two pages `context/decisions.md` DEC-006 explicitly extended the grid texture to.
-- **Do not use when:** Any other page. This is not a general-purpose decorative wrapper — extending it to a new page requires the same kind of explicit product decision DEC-006 was, not silent reuse because it's convenient.
+- **Purpose:** The circuit/grid texture as a full-page decorative background, without the aurora/ignition-glow. The site-wide default page backdrop, per `context/decisions.md` DEC-010 — DEC-006 originally scoped this to `/timeline`/`/prizes` only; DEC-010 supersedes that scope.
+- **Use when:** Every public page. `/about` was wrapped in it as part of DEC-010; `/challenges`, `/faq`, `/register`, `/rules` are the immediately-following rollout step (same decision, tracked separately per the user's request to review `/about` first).
+- **Do not use when:** The homepage — Hero already supplies its own richer aurora + grid + ignition-glow treatment; wrapping `/` in `PageBackdrop` on top of that would be redundant.
 - **Composition:** `AnimatedGridPattern` (motion) + a static grid fallback, both always rendered, visibility toggled by `motion-safe:`/`motion-reduce:` CSS only — never a `useReducedMotion()` structural branch (see the Accessibility Registry's note on why).
-- **Token/rule dependencies:** `border-light` (grid lines), `background`. Never `primary`/`ember` (no glow/aurora here — that distinction from Hero is the entire point of DEC-006 restricting this to "grid only").
-- **Relevant routes:** `/timeline`, `/prizes`.
+- **Token/rule dependencies:** `border-light` (grid lines), `background`. Never `primary`/`ember` (no glow/aurora here — that distinction from Hero is unchanged by DEC-010, which only broadened *where* the grid-only treatment applies, not what it contains).
+- **Relevant routes:** All public routes except `/`.
 
 ### Page Header
 - **Status:** Active — `components/public/page-header.tsx`
@@ -269,6 +281,16 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Relevant routes:** `/prizes` only.
 - **Notes:** Only the three confirmed prize tiers and the confirmed total are ever rendered — see Page-Level Patterns below. This round's reference image's per-tier taglines ("Most impactful solution...", "Ideas with strong execution...") and its vertical accent wording ("PEOPLE / IDEAS / TECHNOLOGY / A STRONGER BHARAT") were both deliberately not adopted — neither is confirmed anywhere in `project-overview.md`/`tbd.md`. The accent column instead reuses the exact confirmed theme string already used verbatim in Hero. Everything else in the reference (waveform silhouette, three-peak composition, 1st-place prominence, one-time staggered entrance) was built as specified. Per explicit instruction this round, spacing/CTA/nav-active-state fixes are deliberately deferred to a later pass, not part of this redesign.
 
+### India Network Map / Global Network Globe
+- **Status:** Active — `components/public/network-graphic.tsx` (`IndiaNetworkMap`, `GlobalNetworkGlobe`, sharing internal `NetworkDot`/`NetworkArc` pieces)
+- **Purpose:** Two bespoke decorative illustrations for `/about`, per `context/decisions.md` DEC-010 — a real India outline with glowing city-position dots and connecting arcs in the "What is Tech4Bharat" section, and a real-landmass globe with the same dot/arc language at a "zoomed out" scale in the GAVS 2026 section. Deliberately built as one consistent visual system across two scales, not two unrelated graphics.
+- **Composition:** `IndiaNetworkMap` — India's actual boundary (real TopoJSON via `react-simple-maps`/`d3-geo`/`topojson-client`/`world-atlas`, extracted server-side in `lib/geo.ts` and passed in as a `Feature` prop; see DEC-011 — a first hand-authored version was corrected after it didn't actually resemble India), with dots at real coordinates for Delhi/Mumbai/Kolkata/Chennai/Bengaluru and arcs from each to Bengaluru specifically (the one city-level location confirmed in `tbd.md` — the grand-finale city — so it's the visual "hub", not an arbitrary pick). No city name or claim is rendered as text; this is decorative geography, not an assertion of fact. `GlobalNetworkGlobe` — the real world landmass on a `geoOrthographic` projection rotated to center India, with `react-simple-maps`' own `<Sphere>`/`<Graticule>` for the outline and real curved lat/long lines, a featured "India" dot, and arcs radiating to four real outer coordinates (London/Dubai/Singapore/Tokyo, chosen only for being visible from that rotation) evoking global reach, reusing the same `NetworkDot`/`NetworkArc` primitives.
+- **Variants:** None — each is a single fixed composition, sized via `max-w-sm` and scaling with its container.
+- **Responsive behavior:** scales fluidly with its parent grid column; stacks below its section's text on narrower breakpoints as part of the section's `grid md:grid-cols-2` layout. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **Accessibility requirements:** both `<svg>`s are `aria-hidden="true"`, purely decorative. Entrance is a one-time reveal, self-contained in each component (an outer `motion.div` with `whileInView`/`viewport={{ once: true }}` propagates to a fade+rise wrapper, then a staggered dot pop-in, then a staggered arc fade-in that starts after the dots) — the same variant-propagation technique verified for Prize Display's waveform/markers (DEC-009), reused rather than reinvented. Gated on `prefers-reduced-motion` via `MotionConfig`'s `reducedMotion="user"` — arcs deliberately use an opacity stagger rather than a `pathLength` stroke-draw, since `pathLength` isn't covered by that mechanism (see DEC-010's reasoning). Verified two ways for this component specifically, not assumed from the Prize Display precedent alone: (1) an initial full-page screenshot with no incremental scroll made the globe appear entirely missing — traced to Playwright's `fullPage` capture not reliably firing `IntersectionObserver`-based `whileInView` triggers for content below the fold without an actual scroll first, not a real component bug, and fixed in the verification script (scroll incrementally through the page before capturing), not the component; (2) comparing computed opacity/transform for both graphics immediately after their first reveal against two further scroll-away-and-back cycles (including one scrolling past the whole page first) showed byte-identical values every time, confirming neither entrance replays.
+- **Token/rule dependencies:** `primary`/`border-light` only (dots, arcs, outline strokes, wireframe lines) — no new hue. This is `ui-tokens.md`'s Visual Effects table's second exception to the decorative-icons/illustrations restriction (the first being Timeline's phase icons, DEC-006) — scoped to `/about` specifically, not a general license for illustration elsewhere. `react-simple-maps`/`d3-geo`/`topojson-client`/`world-atlas` are documented in `context/library-docs.md`; the ~750KB/55KB source TopoJSON files never reach the client bundle — confirmed by grepping built chunks, not assumed — since extraction happens server-side in `lib/geo.ts`.
+- **Relevant routes:** `/about` only.
+
 ### Empty State
 - **Status:** Planned
 - **Purpose:** Communicates "no data exists yet" for a genuinely empty (not pending, not unpublished) content area.
@@ -278,12 +300,22 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Relevant routes:** any route with organizer-populated content (e.g. `/challenges`, `/faq` before content exists).
 
 ### Pending Confirmation State
-- **Status:** Planned
+- **Status:** Active — `components/public/pending-confirmation-state.tsx`. First real implementation of what was a spec-only registry entry until this round (`/challenges`); built exactly to the composition already recorded here and in `ui-rules.md`'s "Pending / Unconfirmed Content" section, not a new one-off design.
 - **Purpose:** Communicates "this information isn't finalized yet" without looking broken — the standard treatment for any `tbd.md` Not Confirmed item.
-- **Composition:** dashed `border-muted` Card + `warning` Badge + short heading + one sentence of neutral context.
+- **Composition:** dashed `border-muted`/`surface-muted` Card (`variant="informational"`, the Empty-State card pattern) + `warning` Badge reading "Pending confirmation" + short heading + one sentence of neutral context, passed in via `heading`/`message` props so callers supply accurate, route-specific copy rather than the component inventing example content.
 - **Do not use when:** Content is genuinely empty with no pending decision behind it — use Empty State instead.
 - **Token/rule dependencies:** `warning`/`warning-light`, `surface-muted`, `border-muted`.
-- **Relevant routes:** `/challenges`, `/rules` (for unconfirmed detail sections), `/timeline` (for unconfirmed milestone dates), any route surfacing a `tbd.md` item.
+- **Relevant routes:** `/challenges` (its first usage — "Official Challenge Statements... will be published once confirmed by organizers"), `/rules` (for unconfirmed detail sections), `/timeline` (for unconfirmed milestone dates), any route surfacing a `tbd.md` item.
+
+### Approach Steps
+- **Status:** Active — `components/public/approach-steps.tsx`
+- **Purpose:** `/challenges`' numbered process sequence (Understand → Ideate → Build → Create Impact), describing the APPROACH participants take, not specific challenge sectors/tracks. Two reference layouts were explicitly rejected for this section: a four-sector icon-card grid (Sustainable Development / Inclusive Growth / Education & Skills / Healthcare Access), which invents challenge tracks with no basis in `tbd.md` (both "Problem statements" and "Challenge tracks" are listed Not Confirmed there); and a plain unconnected numbered list, in favor of the richer connected-step version per DEC-004's visual-richness allowance and direct instruction.
+- **Composition:** four numbered circles (`primary` border, `background` fill) in a horizontal row at `md`+, connected by a one-time `scaleX` line-draw (`origin-left`, same transform-based technique as Timeline's `scaleY` spine) — collapses to a plain vertical stack with no line below `md`, since a horizontal connector doesn't compress well into a narrow column.
+- **Variants:** None — a single fixed 4-step sequence; step count/labels are hardcoded content describing the confirmed general approach, not organizer-supplied data.
+- **Responsive behavior:** `grid-cols-1` (mobile) → `sm:grid-cols-2` → `md:grid-cols-4` with the connecting line appearing only at `md`+. Verified with real browser screenshots at 375/768/1440px — no horizontal overflow at any width.
+- **Accessibility requirements:** one-time entrance — a single ancestor `motion.div` declares `whileInView`/`viewport={{ once: true }}`, propagating to the connecting line and each step (staggered fade+rise) via variant propagation, not independent triggers. Verified via computed transform/opacity comparison across two scroll-away-and-back cycles (including one scrolling past the whole page first) — byte-identical every time, confirming no replay.
+- **Token/rule dependencies:** `primary` (circles, line), `background` (circle fill), `border-muted` (static line track), `text-primary`/`text-secondary` (titles/descriptions).
+- **Relevant routes:** `/challenges` only.
 
 ### Form Field
 - **Status:** Planned
@@ -423,7 +455,7 @@ Component-level implications of `ui-rules.md`'s accessibility rules (see that fi
 | Mobile Navigation Drawer | Full-height panel | Full-height panel | Not rendered |
 | Hero | Smallest heading step, stacked CTAs | Mid heading step | Full heading step, side-by-side CTAs |
 | Page Header | No structural change | No structural change | No structural change |
-| Prize Card / Prize Display | 1 column (header above podium) | 1 column | 2-column (header + podium side by side, ≥1024px) — see Prize Display entry for why the header no longer uses the standard Page Header responsive rule |
+| Prize Card / Prize Display | 1 column (header above waveform, accent column hidden) | 1 column, accent column hidden | Accent column revealed (≥1024px) — see Prize Display entry for why the header no longer uses the standard Page Header responsive rule |
 | Timeline | Vertical | Vertical | Vertical (no desktop variant — see Timeline entry) |
 | Form Field / Form Section | Full-width, single column | Single column | Single column, capped width |
 | Table | Stacked cards or horizontal scroll (per column count) | Same rule | Full table |
@@ -497,18 +529,21 @@ Before creating a new reusable component, ask:
 | Separator | Primitive | Active | Visual divider | FAQ, Table |
 | Dialog / Modal | Primitive | Active | Centered blocking overlay | None confirmed yet |
 | Focus Treatment | Primitive (style) | Active | Shared focus-visibility style | All interactive elements |
+| TextReveal | Primitive | Active | One-time fade+rise text entrance (word-stagger or block) | `/about` so far |
 | Site Header | Composed | Planned | Persistent public navigation | All public routes |
 | Mobile Navigation Drawer | Composed | Planned | Mobile-collapsed nav | All public routes |
-| Page Backdrop | Composed | Active | Grid-texture-only page background (no aurora/glow) | `/timeline`, `/prizes` |
+| Page Backdrop | Composed | Active | Grid-texture-only page background (no aurora/glow) | All public routes except `/` |
 | Page Header | Composed | Active | Standard non-hero page intro | `/timeline` only |
 | Hero | Composed | Active | Homepage's single high-impact intro | `/` only |
 | Event Glance | Composed | Active | Compact 3-fact homepage recap | `/` only |
 | FAQ Item / FAQ Accordion | Composed | Planned | Expandable Q&A row | `/faq` |
 | Timeline | Composed | Active | Confirmed-milestone sequence display | `/timeline` only |
-| Prize Card | Composed | Active | Single isometric-block prize tier display (inlined in Prize Display) | `/prizes` only |
+| Prize Card | Composed | Active | Single rank-marker prize tier display, rising from the waveform (inlined in Prize Display) | `/prizes` only |
 | Prize Display | Composed | Active | Full prize section, incl. bespoke two-column header | `/prizes` only |
+| India Network Map / Global Network Globe | Composed | Active | Decorative dot/arc network illustrations, map + globe scale | `/about` only |
 | Empty State | Composed | Planned | "Genuinely no data" state | Content-bearing routes |
-| Pending Confirmation State | Composed | Planned | "Awaiting organizer confirmation" state | Any route with `tbd.md` content |
+| Pending Confirmation State | Composed | Active | "Awaiting organizer confirmation" state | `/challenges`, any route with `tbd.md` content |
+| Approach Steps | Composed | Active | Numbered process sequence, connected-step layout | `/challenges` only |
 | Form Field | Composed | Planned | Label + input + helper/error unit | `/register` |
 | Form Section | Composed | Planned | Grouped Form Fields + submit | `/register` |
 | Status / Notification Banner | Composed | Planned | Inline success/error/warning/info message | `/register` |
@@ -516,7 +551,7 @@ Before creating a new reusable component, ask:
 | Table Empty State | Composed | Planned | Empty Table body state | Conditional (participant/admin) |
 | Public Information Page | Page Pattern | Planned | Header → content composition | `/about`, `/challenges`, `/rules`, `/faq` |
 | Public Registration Page | Page Pattern | Planned | Header → form composition (shell only) | `/register` |
-| Pending Information Section | Page Pattern | Planned | Reusable placement of Pending Confirmation State | Any route with `tbd.md` content |
+| Pending Information Section | Page Pattern | Active | Reusable placement of Pending Confirmation State | `/challenges`, any route with `tbd.md` content |
 | Timeline Section | Page Pattern | Active | `PageBackdrop` → Page Header → Timeline | `/timeline` only |
 | Prize Section | Page Pattern | Active | `PageBackdrop` → Prize Display (header built in) | `/prizes` only |
 | Team components | Conditional | Conditional | — (see Conditional Components) | Conditional |

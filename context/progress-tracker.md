@@ -76,6 +76,9 @@ Cross-referenced against `ui-registry.md`'s Current Registry — every entry the
 | Responsive behavior | Verified for Hero, Event Glance, Timeline, Prize Display | Real Playwright/Chromium screenshots at 375/768/1440px each round, not just class-name inspection | A real bug was caught this way once (Prize Display's featured-card text clipping at a 768px 3-column layout) and fixed before shipping |
 | Accessibility foundations (Focus Treatment) | Done | `.focus-ring` utility class in `app/globals.css`, applied by every interactive primitive above | |
 | Reduced-motion foundation | Done | `components/motion-provider.tsx` (`<MotionConfig reducedMotion="user">` in the root layout) | Fixes a real hydration-mismatch bug found in Hero/EventGlance/Timeline — see `ui-registry.md`'s Accessibility Registry note |
+| TextReveal (text-entrance primitive) | Active | `components/ui/text-reveal.tsx`, applied to `/about` and `/challenges`'s headings/paragraphs | Extracts Hero/Timeline's independently-duplicated fade+rise pattern into one reusable component (DEC-012); adds word-level stagger for headings. Hero/Timeline's own existing implementations were **not** retrofitted, and neither were FAQ/Register/Rules — open scoping question, not yet decided |
+| Pending Confirmation State | Active | `components/public/pending-confirmation-state.tsx`, used on `/challenges` | First real implementation of a previously spec-only registry entry (DEC-013) |
+| Approach Steps | Active | `components/public/approach-steps.tsx`, used on `/challenges` | Connected-step numbered process sequence (DEC-013) — describes participants' approach, not challenge sectors/tracks |
 
 ---
 
@@ -85,7 +88,7 @@ Cross-referenced against `ui-registry.md`'s Current Registry — every entry the
 |---|---|---|---|---|---|
 | `/` | In Progress | Hero + Event Glance | Verified at 375/768/1440px | All confirmed facts only | Timeline and Prizes sections were built here in an earlier pass, then removed per `context/decisions.md` DEC-006 — they're real redundant with Hero/Event Glance and now live at `/timeline`/`/prizes` instead. A closing CTA band (the third of the three "bookend" sections) is not built yet |
 | `/about` | Not Started | Not Started | Not Started | Not Started | — |
-| `/challenges` | Not Started | Not Started | Not Started | Not Started | Will use Pending Confirmation State per `build-plan.md` — no content confirmed |
+| `/challenges` | Done | `app/challenges/page.tsx` | Verified at 375/768/1440px | All confirmed facts only | Grid backdrop (DEC-010), `TextReveal`, connected-step approach sequence, and the page's first real Pending Confirmation State usage (DEC-013). The four-sector reference layout (Sustainable Development/Inclusive Growth/Education & Skills/Healthcare Access) was explicitly excluded — invented challenge tracks, not confirmed in `tbd.md` |
 | `/timeline` | Done | `components/public/timeline.tsx` | Verified at 375/768/1440px | All confirmed facts only | Vertical-always layout, real page-level spacing (not a homepage-compressed strip) |
 | `/prizes` | Done | `components/public/prize-display.tsx` | Verified at 375/768/1440px | All confirmed facts only | Mountain-range waveform silhouette with three rank markers rising from its peaks (DEC-009, superseding DEC-008's isometric podium) — a real layout bug (marker stack overflowing above an undersized container, overlapping the CTA button at 375px) was caught via `getBoundingClientRect()` inspection and fixed before shipping; one-time staggered entrance (waveform, then markers) verified via computed-style opacity sampling and scroll-cycle replay checks |
 | `/rules` | Not Started | Not Started | Not Started | Not Started | Partially pending per `tbd.md` |

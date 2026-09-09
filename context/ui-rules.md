@@ -369,7 +369,7 @@ All allowed transitions are short (150–250ms) with standard ease curves — no
 | Ember glow | Signals live/urgent state | "Live now" badges, active countdown elements only |
 | Focus ring | Accessibility — visible keyboard focus | Every interactive element, universally |
 | Elevation shadow | Signals something is floating above the page | Modals, dropdowns, popovers only — never static cards |
-| Circuit/grid texture | Reinforces technology-forward feel at the one spectacle moment | Hero background only, beneath the glow, low opacity, never behind unshielded text |
+| Circuit/grid texture | Reinforces technology-forward feel consistently, site-wide | Site-wide default via `PageBackdrop` (beneath the glow on Hero specifically), low opacity, never behind unshielded text — per `context/decisions.md` DEC-010 |
 | Background imagery | Not currently required | Hero only, if ever introduced, must sit under an `overlay` |
 | Overlay | Guarantees text contrast over any glow/imagery | Wherever text sits on top of the hero background |
 
@@ -407,7 +407,7 @@ No new gradient or glow is introduced anywhere in the product without first bein
 ## Invariants
 
 1. Every color used in a component resolves to a CSS variable defined in `ui-tokens.md` — no raw hex/rgb anywhere in component code.
-2. The homepage hero is the only place the ignition-glow + circuit-texture combination and hero-display-heading typography appear together; a future closing-CTA band may reuse glow tokens alone, never the texture or hero typography. The circuit/grid texture (not the glow) is additionally permitted on `/timeline` and `/prizes` as page-level backdrops, per `context/decisions.md` DEC-006 — those two pages still never use the ignition glow, aurora, or hero-display-heading typography.
+2. The homepage hero is the only place the ignition-glow + circuit-texture combination and hero-display-heading typography appear together; a future closing-CTA band may reuse glow tokens alone, never the texture or hero typography. The circuit/grid texture (not the glow) is the default page-level backdrop on every route via `PageBackdrop`, per `context/decisions.md` DEC-010 (superseding DEC-006's narrower `/timeline`/`/prizes`-only scope) — every page besides Hero itself still never uses the ignition glow, aurora, or hero-display-heading typography.
 3. No page other than the homepage uses hero-display-heading typography for its top heading.
 4. Every interactive element has a visible `:focus-visible` state using `border-focus`/`focus-ring`.
 5. Every badge/status indicator pairs color with an icon and/or text label, verifiable by inspecting the markup.
