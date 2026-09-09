@@ -274,3 +274,98 @@ Direct instruction to redesign against a specific reference, reusing (or, once t
 
 **Impact:**
 `app/rules/page.tsx` (rewritten), `components/ui/icon-card.tsx` (new), `components/public/rules-grid.tsx` (new), `components/public/notification-banner.tsx` (new), `context/ui-registry.md` (new IconCard entry; Status/Notification Banner flipped Planned → Active; `TextReveal`'s and `PageHeader`'s relevant-routes notes updated). Does not touch FAQ/Register.
+
+---
+
+### DEC-015 — `/faq` redesigned: numbered accordion + the vertical accent text device extracted from Prize Display
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+`/faq` is rebuilt with a numbered (01–09) accordion plus a vertical accent text column, with two things checked/corrected before or during the work rather than assumed:
+
+1. **A correction before building:** the request described the vertical accent text device as "already built for About." It wasn't — grepping the repo found it only on `/prizes` (`components/public/prize-display.tsx`, DEC-009's "Scalable / Innovations / Next-Gen / India" stacked column), inline, not extracted as a shared component. Rather than either silently building a second hand-copied instance or stalling on the naming mix-up, it's extracted now that a second page wants it: `components/ui/vertical-accent-text.tsx`, reusing the exact same confirmed theme words (no new phrasing invented for `/faq` specifically) and the exact same visual treatment. `PrizeDisplay` is refactored to consume the extracted component instead of its own inline copy — re-verified after the refactor that `/prizes` still renders and animates identically.
+2. **All nine FAQ answers were checked against `tbd.md` before any redesign work started**, per explicit instruction, not after. The three specifically named (challenge statements, eligibility/team rules, registration workflow) already gave honest, correctly-hedged pending-confirmation answers with no invented specifics — copy for all nine questions is unchanged from the previous version, only the presentation changed.
+3. **Numbered accordion, not the sidebar-categorized alternative** — explicitly rejected per instruction: nine questions don't split meaningfully into named categories yet, and most categories would hold a single item.
+4. **`PageBackdrop`'s grid texture (DEC-010) was missing from `/faq` entirely** on the previous (teammate-built) version, unlike `/about`, `/challenges`, and `/rules`, which all already had it. This was a real, confirmed gap, not a stylistic choice — fixed by wrapping the page the same way as the other three.
+5. **Entrance animation** follows the same one-shared-trigger technique as every other animated list this session (a single ancestor `motion.div` with `whileInView`/`viewport={{ once: true }}`, variant propagation to each accordion item), plus `TextReveal` for the hero/section headings. Verified explicitly, not assumed from precedent: computed opacity/transform for the first and last accordion items, compared immediately after first reveal against two further scroll-away-and-back cycles (including one scrolling past the whole page first), came back byte-identical every time.
+
+**Reason:**
+Direct instruction to redesign `/faq` against a described layout, with an explicit pre-check on answer honesty before any visual work started (given how many of this project's pages have needed a "does this claim something unconfirmed" pass), and to reuse rather than re-invent a visual device that turned out to live on a different page than assumed.
+
+**Impact:**
+`app/faq/page.tsx` (rewritten), `components/ui/vertical-accent-text.tsx` (new, extracted), `components/public/prize-display.tsx` (refactored to consume the extracted component; re-verified unchanged behavior), `context/ui-registry.md` (new VerticalAccentText entry; Prize Display's entry updated to reference the extraction). Does not touch Register.
+
+---
+
+### DEC-016 — Fixed `AnimatedGridPattern` reseeding on every container resize, not just on mount; a genuine bug, not a wasted-re-render issue
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+The grid background visibly reseeded (every square jumping to a new random position and restarting its fade-in) every time an FAQ accordion item opened or closed. Diagnosed properly before fixing, per direct instruction, rather than guessed at:
+
+1. **Not a wasted-re-render problem.** `PageBackdrop`/`AnimatedGridPattern` are in the same component tree as `FAQPage`'s `openIndex` state (as they are on every page using `PageBackdrop`), so toggling the accordion does re-render them — but `AnimatedGridPattern`'s own square-reseed `useEffect` depends only on `dimensions.width`/`dimensions.height` (internal state, set only by its own `ResizeObserver`) and stable literal props (`width`/`height`/`numSquares`) — none of which change from an unrelated parent re-render alone. A `React.memo` wrapper (the first fix option offered) would not have addressed the actual cause.
+2. **The actual cause: a real, correctly-detected resize.** The grid `<svg>` is `absolute inset-0` inside `PageBackdrop`'s outer wrapper, which has no explicit height — it auto-sizes to *all* of the page's content, since it wraps `{children}` for the whole page. When an accordion item expands or collapses, that wrapper's rendered height genuinely changes, the `ResizeObserver` correctly fires with new dimensions, and the *old* effect (inherited from the upstream Magic UI source, `useEffect(() => { if (dimensions...) setSquares(generateSquares(...)) }, [dimensions.width, dimensions.height, ...])`) reseeded the entire square set on every such change — mount included, but not mount-only. This would fire identically from a genuine browser window resize on any page using `PageBackdrop`, not only from an accordion.
+3. **Fix:** a `hasSeededRef` (`useRef(false)`) guards the reseed so it only ever runs once, the first time real dimensions become available — never again on subsequent `dimensions` changes, regardless of what causes them (accordion-driven layout shift, window resize, or anything else). This is the "useRef to track already-seeded" approach, not a `React.memo`/state-relocation workaround, because the underlying resize is real and correct to detect — it's the *reaction* to every resize that was wrong, not the detection itself.
+4. **The `react-hooks/set-state-in-effect` lint suppression from Hero's original build is removed, not just narrowed** — with the ref guard in place, ESLint's rule correctly recognizes this as a legitimate one-time-initialization pattern and no longer flags it; confirmed by actually running lint after the fix, not assumed. The suppression's original comment ("known, non-blocking lint finding") undersold what was actually a real, user-visible bug once a page had any layout-height-changing interactive element — FAQ's accordion was simply the first page to have one.
+5. **Checked broadly, not just FAQ**, per instruction: no other current page (`/`, `/about`, `/challenges`, `/timeline`, `/prizes`, `/rules`) has an interactive element that changes layout height (no accordions/expand-collapse; the only hover effect using `PageBackdrop`, Event Glance's `BorderBeam`, is opacity-only and doesn't affect layout) — so FAQ was the only page currently exhibiting the symptom. The fix is structural (in the shared component itself), so it protects every current and future `PageBackdrop` consumer, not just FAQ.
+
+**Verification:** all 22 squares' `x`/`y` positions captured before, then compared after repeatedly opening and closing 6 different FAQ accordion items (12 toggle actions total) — byte-identical every time. All seven public routes re-checked for console/page errors after the fix (zero). Not verified by screenshot comparison alone — a before/after screenshot of the same viewport region necessarily shows different underlying content once the accordion reflows the page, which isn't informative for this specific check; the programmatic position comparison is what actually confirms the fix.
+
+**Reason:**
+A real, user-visible bug traced to its actual root cause (a correctly-detected resize being over-reacted to) rather than patched at the symptom level (e.g., disabling the `ResizeObserver` on this page, or hiding the grid while the accordion is open).
+
+**Impact:**
+`components/ui/animated-grid-pattern.tsx` only — no page-level changes required, since the fix is in the shared component every `PageBackdrop` consumer already depends on.
+
+---
+
+### DEC-017 — `/register` rebuilt around a hand-built boarding-pass/ticket visual metaphor
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+`/register` is rebuilt around a boarding-pass/event-ticket shape — deliberately different from every other page's visual approach (no accordion, no icon grid, no network-graphic illustration), since a "you're holding a ticket to something not yet confirmed" frame fits an unopened registration better than a generic hero-plus-cards layout.
+
+1. **Searched before building anything, per explicit instruction**, rather than assuming nothing existed: npm (four queries — "boarding pass," "ticket stub react," "event ticket component," "die cut card react" — all pure keyword noise, no actual UI components), Aceternity UI's full component list (fetched directly — 14 categories, nothing ticket/pass-shaped), shadcn.io's full 59-component list (which also covers Magic UI's registry — nothing matched; "Credit Card" was the closest, a payment-card flip component, not an admission-ticket shape), and a targeted `registry.directory`/`21st.dev` search (no relevant hits). Nothing found anywhere, so `components/public/ticket-pass.tsx` is hand-built decorative geometry — per the user's own framing, this is unlike the India map earlier this session, since a ticket's die-cut/perforation shape has no "correct" real-world answer to get wrong, only a plausible one.
+2. **The die-cut notches** (four card corners, plus the two points where the perforation line meets the card edge) use a `bg-background`-colored circle overlapping the card border — the standard CSS "cutout" trick, correct-by-construction against whatever the actual page background token resolves to, rather than a hardcoded color or an SVG clip-path.
+3. **The perforation's orientation is responsive, not uniformly scaled down**, per explicit instruction to actually think about mobile rather than shrink a desktop layout: a vertical dashed line splits the card left/right (main pass + stub) at `lg`+, matching a real boarding pass' side stub; below `lg` it becomes a horizontal line with the stub stacked underneath, since a vertical stub squeezed into a narrow column would leave an awkwardly thin sliver. Both DOM structures always render, with Tailwind responsive classes toggling visibility — the same "both variants render, CSS switches" pattern used for every other structural responsive difference in this project, avoiding hydration risk from viewport-conditional rendering.
+4. **The "What You'll Need" three items** (Participant Details / Team Information / Official Guidelines) are unchanged in substance — restyled as a manifest-style line-item list on the ticket stub (icon + label + short line) instead of generic cards, per instruction. Copy is the same as the previous version.
+5. **The "AWAITING CONFIRMATION" status and every ticket field are plain text/badges — no functional CTA anywhere**, per explicit instruction not to style a button that implies a wired-up action. The previous version's `<button>Registration Opening Soon</button>` (inert — no `onClick` — but visually indistinguishable from a real button) is gone entirely.
+6. **The "DEPARTURE" countdown field is computed client-side, in a `useEffect` gated by a `useRef` guard** (the same one-time-init pattern used to fix `AnimatedGridPattern` in DEC-016 — `react-hooks/set-state-in-effect` flagged the naive version identically, for the identical underlying reason), not synchronously during render. This page is statically prerendered, so a synchronous `Date.now()` computation would bake in the *build* timestamp on the server while the client computes a different, correct value at hydration time — exactly the hydration-mismatch shape this project has hit and fixed multiple times already. The server/first-paint render shows a placeholder (`—`); the real value (verified: 107 days as of this build, recomputed via an independent script, not eyeballed) fills in after mount.
+7. **Verified the DEC-016 grid-reseed fix holds here too**, even though `/register` has no accordion: captured all 22 grid-pattern square positions after the ticket's own entrance animation and the countdown effect settle, then again after a further 2s wait — byte-identical, confirming neither the entrance transform (opacity/y/scale, which doesn't affect layout) nor the countdown's `setState` triggers an unwanted reseed.
+
+**Reason:**
+Direct instruction to search for prior art before hand-building anything decorative, and to give `/register` its own distinct visual identity rather than reusing the icon-card/accordion/waveform shapes already used elsewhere.
+
+**Impact:**
+`app/register/page.tsx` (rewritten), `components/public/ticket-pass.tsx` (new). Reuses `VerticalAccentText` (DEC-015) and `TextReveal` (DEC-012) rather than introducing new primitives for those parts.
+
+---
+
+### DEC-018 — Interest-capture form added to `/register`: the first real `Form Field`, a name-collision avoided with the backend integration branch's own registration action
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+`/register` gets an actual functional element — a name+email interest-capture form — sitting below `TicketPass` (DEC-017), which stays purely illustrative (a preview of what a confirmed pass will look like, not a claim that one has been issued). Per the earlier reasoning already logged in this project: the full competition registration workflow is unconfirmed (`tbd.md` — eligibility, team rules, and the workflow itself are all "Not confirmed"), so interest-capture is the safe, honest scope for a real, working form today.
+
+1. **`components/ui/form-field.tsx`** is the first real implementation of the "Form Field" registry entry (previously "Planned"), built to its existing spec exactly — label with a `text-secondary` (non-semantic) required asterisk, helper text replaced by `error`-colored text when invalid, per `ui-rules.md`'s Forms section. `components/public/interest-form.tsx` composes it with `Card` + `Input` + `Button` into what the registry's "Public Registration Page" pattern already called a Form Section — no separate `FormSection` component was extracted, since the pattern was already documented as a composition (Card containing Form Fields + submit Button), not a distinct reusable unit, matching how "Timeline Section"/"Prize Section" are documented patterns rather than components.
+2. **Checked the backend integration branch (`origin/sback`, authored by Satyendra Nayak K) before naming anything**, rather than guessing at what might collide. It already defines `submitRegistration()` in `actions/register.ts` — a full, auth-gated flow (session check, duplicate-registration check, team ID) targeting a `registrations` table, for the actual confirmed competition registration once that workflow exists. This form's handler is deliberately named `handleRegistrationSubmit`, not `submitRegistration`, and targets a separate, much smaller `interest_signups` table — reusing the backend's own function name for a semantically different, smaller-scoped flow would have been a real footgun for whoever wires this up next, not just a style mismatch.
+3. **Validation is hand-rolled (required fields, an email regex), not Zod** — Zod is `library-docs.md`'s adopted validation library architecturally, but isn't installed on this branch (it lives in the backend branch's `package.json`, alongside `registrationSubmissionSchema`). Installing a dependency for two simple client-side checks that get properly re-validated server-side once the real backend lands would be exactly the "library for a one-off convenience" `library-docs.md` advises against.
+4. **`handleRegistrationSubmit` is exported, isolated, and documented with a `TODO` directly above it** naming what it needs to become (a Supabase insert into `interest_signups (name, email, timestamp)`) and who owns that (Satyendra, `origin/sback`) — the stub currently only logs and returns `{ success: true }`, keeping the same `Promise<{ success: boolean }>` shape the real implementation should return, so nothing in `InterestForm` needs to change when it's wired up. A failure path (`{ success: false }` or a thrown error) is already handled by the existing `error` status branch.
+5. **Success and error states both exist**, driven by a simple `status: "idle" | "submitting" | "success" | "error"` flag — success shows a generic, non-specific confirmation (per `ui-rules.md`'s Forms section: "the message stays generic... since post-submission workflow... is not yet confirmed"), and error reuses `NotificationBanner` (DEC-014) in its `error` variant rather than a new one-off failure treatment.
+6. **The interest-vs-competition-registration distinction is made explicit in the form's own copy** ("This only registers your interest — it doesn't confirm a spot..."), directly addressing the instruction to keep the ticket's "AWAITING CONFIRMATION" badge from being misread as describing a personal submission status rather than the pass itself.
+
+**Verification:** ran the full flow in a real browser — empty submit correctly shows both required-field errors; an invalid-format email correctly shows the format error while a filled valid name has no error; a valid submission shows the success card and the exact `console.log` output the stub handler produces. The error state was also verified by temporarily forcing `handleRegistrationSubmit` to return `{ success: false }`, screenshotting the resulting error banner (form values preserved, not cleared, so the visitor can retry), then reverting the file back to its shipped `{ success: true }` state — confirmed via `grep` and a full re-run of the success-path test afterward, not assumed reverted correctly.
+
+**Reason:**
+Direct instruction to build a working, isolated stub the backend team can wire real logic into without needing to change anything else, and to avoid exactly the kind of naming collision that would create confusion once both branches merge.
+
+**Impact:**
+`components/ui/form-field.tsx` (new — first real "Form Field"), `components/public/interest-form.tsx` (new), `app/register/page.tsx` (adds the form section). `context/ui-registry.md` (Form Field flipped Planned → Active; new InterestForm-adjacent notes). Does not touch or depend on anything from `origin/sback` — read-only reference to understand naming, nothing merged or imported.

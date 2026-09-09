@@ -85,13 +85,32 @@ export function AnimatedGridPattern({
     [getPos]
   )
 
+  /*
+   * Seed once, on the first real measurement, not on every subsequent
+   * resize. The original upstream Magic UI behavior reseeded on every
+   * `dimensions` change, which looked harmless in isolation but broke on
+   * any page where the container's own content can change height —
+   * `PageBackdrop`'s grid SVG is `absolute inset-0` inside an auto-height
+   * wrapper spanning the *entire* page, so an FAQ accordion item
+   * expanding/collapsing genuinely resizes that wrapper, the
+   * `ResizeObserver` correctly fires, and the old effect regenerated
+   * every square at a new random position with a restarted fade-in —
+   * visible as the whole background "flashing"/reseeding on every toggle.
+   * Confirmed by measuring: this wasn't a wasted re-render (the squares
+   * effect's dependencies don't change from an unrelated parent
+   * re-render) — it was a real resize, correctly detected, over-reacted
+   * to. The same root cause would fire on a genuine browser window
+   * resize on any page using this component, not just accordions.
+   *
+   * `hasSeededRef` makes the one-time intent explicit and verifiable,
+   * rather than relying on effect dependency timing (which happened to
+   * work for a static-height page but not a dynamic one).
+   */
+  const hasSeededRef = useRef(false)
+
   useEffect(() => {
-    if (dimensions.width && dimensions.height) {
-      // Upstream Magic UI pattern: re-seed the square set whenever the
-      // container is (re)measured. Left as-is rather than restructured,
-      // to avoid diverging from the tested upstream animation-cycling
-      // behavior; this is a known, non-blocking lint finding.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (dimensions.width && dimensions.height && !hasSeededRef.current) {
+      hasSeededRef.current = true
       setSquares(generateSquares(numSquares))
     }
   }, [dimensions.width, dimensions.height, generateSquares, numSquares])

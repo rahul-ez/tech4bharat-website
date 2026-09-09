@@ -1,10 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
+/**
+ * Navbar — the shared site header. Sticky (added previously), now also:
+ * - Semi-transparent + `backdrop-blur-md` instead of a solid fill, so the
+ *   page's grid-pattern backdrop subtly shows through underneath it.
+ * - A bottom border that fades in once scrolled past ~50px, rather than
+ *   being present from y=0 — blends into the Hero at the very top of the
+ *   homepage, then gives scrolled content a clear separation line. This
+ *   is a one-time-per-threshold state flip (`scrolled` crosses `false`→
+ *   `true` once, back on scroll-up), driven by a plain `scroll` listener
+ *   with a CSS `transition-colors` for the fade — not a continuous/
+ *   looping animation.
+ *
+ * The scroll listener only runs client-side, after mount (`useEffect`),
+ * with `scrolled` initialized to `false` — matching this project's
+ * established pattern for anything that reads real browser state
+ * (`window.scrollY` has no meaningful SSR value): the server and first
+ * client paint always agree (unscrolled), the real state fills in
+ * immediately after mount, avoiding a hydration mismatch.
+ */
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 50);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const navLinks = [
     { name: "Home", href: "/" },
@@ -17,7 +46,11 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="border-b border-white/10 bg-[#0b1120]">
+    <header
+      className={`sticky top-0 z-50 border-b bg-surface/80 backdrop-blur-md transition-colors duration-300 ${
+        scrolled ? "border-border-light" : "border-transparent"
+      }`}
+    >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8 md:py-5">
 
         {/* LOGO */}
@@ -68,7 +101,7 @@ export default function Navbar() {
 
       {/* MOBILE MENU */}
       {menuOpen && (
-        <div className="border-t border-white/10 bg-[#0b1120] px-5 py-5 lg:hidden">
+        <div className="border-t border-white/10 bg-surface/95 backdrop-blur-md px-5 py-5 lg:hidden">
           <div className="flex flex-col gap-5">
             {navLinks.map((link) => (
               <Link

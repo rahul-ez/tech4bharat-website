@@ -1,6 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import { motion, type Variants } from "motion/react";
+
+import { PageBackdrop } from "@/components/public/page-backdrop";
+import { VerticalAccentText } from "@/components/ui/vertical-accent-text";
+import { TextReveal } from "@/components/ui/text-reveal";
+
+/**
+ * FAQPage — numbered accordion (01-09) + the vertical accent text device
+ * shared with Prize Display (`components/ui/vertical-accent-text.tsx`),
+ * per direct instruction. The sidebar-categorized layout offered as an
+ * alternative was explicitly rejected — too many single-item categories
+ * for the current question count (9 questions don't split meaningfully
+ * into named categories yet).
+ *
+ * All nine answers were checked against `tbd.md` before this redesign
+ * touched anything: the three flagged (challenge statements, eligibility/
+ * team rules, registration) already give honest pending-confirmation
+ * answers with no invented specifics — copy is unchanged from the
+ * previous version, only the presentation changed.
+ *
+ * `PageBackdrop`'s grid texture (DEC-010) was missing here entirely on
+ * the previous version — every other redesigned page (`/about`,
+ * `/challenges`, `/rules`) already has it; this brings `/faq` in line.
+ */
 
 const faqs = [
   {
@@ -15,8 +39,7 @@ const faqs = [
   },
   {
     question: "When is the grand finale?",
-    answer:
-      "The on-site grand finale is scheduled for 25–27 December 2026 in Bengaluru, India.",
+    answer: "The on-site grand finale is scheduled for 25–27 December 2026 in Bengaluru, India.",
   },
   {
     question: "When does registration open?",
@@ -25,8 +48,7 @@ const faqs = [
   },
   {
     question: "Where will the hackathon take place?",
-    answer:
-      "The grand finale will take place in Bengaluru, India. Specific venue details will be announced by the organizers.",
+    answer: "The grand finale will take place in Bengaluru, India. Specific venue details will be announced by the organizers.",
   },
   {
     question: "What is the prize pool?",
@@ -45,10 +67,21 @@ const faqs = [
   },
   {
     question: "How do I register?",
-    answer:
-      "The registration workflow is currently being finalized. The Register page will be updated once the official registration process is confirmed.",
+    answer: "The registration workflow is currently being finalized. The Register page will be updated once the official registration process is confirmed.",
   },
 ];
+
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
+const list: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const item: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_OUT } },
+};
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -58,90 +91,131 @@ export default function FAQPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0b1120] text-white">
+    <PageBackdrop>
+      <main className="min-h-screen text-white">
 
-      {/* HERO */}
-      <section className="border-b border-white/10 px-6 py-16 text-center sm:py-20 md:px-12 md:py-28 lg:py-32">
-        <p className="mb-5 text-xs font-semibold tracking-[0.3em] text-orange-400 sm:text-sm sm:tracking-[0.35em]">
-          TECH4BHARAT 2026
-        </p>
+        {/* HERO */}
+        <section className="border-b border-white/10 px-6 py-16 text-center sm:py-20 md:px-12 md:py-28 lg:py-32">
+          <TextReveal
+            as="p"
+            className="mb-5 text-xs font-semibold tracking-[0.3em] text-orange-400 sm:text-sm sm:tracking-[0.35em]"
+          >
+            TECH4BHARAT 2026
+          </TextReveal>
 
-        <h1 className="text-4xl font-bold leading-tight sm:text-5xl md:text-7xl">
-          Frequently Asked
-          <span className="block text-orange-400">
-            Questions
-          </span>
-        </h1>
+          <h1 className="text-4xl font-bold leading-tight sm:text-5xl md:text-7xl">
+            <TextReveal as="span" split="word" delayChildren={0.1} className="inline-block">
+              Frequently Asked
+            </TextReveal>
+            <TextReveal as="span" split="word" delayChildren={0.3} className="block text-orange-400">
+              Questions
+            </TextReveal>
+          </h1>
 
-        <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-400 sm:text-lg sm:leading-8 md:mt-8 md:text-xl">
-          Everything you need to know about Tech4Bharat 2026. More information
-          will continue to be added as event details are officially confirmed.
-        </p>
-      </section>
+          <TextReveal
+            as="p"
+            delayChildren={0.45}
+            className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-400 sm:text-lg sm:leading-8 md:mt-8 md:text-xl"
+          >
+            Everything you need to know about Tech4Bharat 2026. More information
+            will continue to be added as event details are officially confirmed.
+          </TextReveal>
+        </section>
 
-      {/* FAQ SECTION */}
-      <section className="mx-auto max-w-4xl px-5 py-16 sm:px-6 sm:py-20 md:px-12 md:py-24">
+        {/* FAQ SECTION */}
+        <section className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-20 md:px-12 md:py-24">
 
-        <div className="mb-10 text-center sm:mb-12">
-          <p className="mb-4 text-xs font-semibold tracking-[0.25em] text-orange-400 sm:text-sm sm:tracking-[0.3em]">
-            HAVE QUESTIONS?
-          </p>
-
-          <h2 className="text-3xl font-bold sm:text-4xl md:text-5xl">
-            We&apos;ve Got Answers
-          </h2>
-        </div>
-
-        <div className="space-y-3 sm:space-y-4">
-          {faqs.map((faq, index) => (
-            <div
-              key={faq.question}
-              className="overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:rounded-2xl"
+          <div className="mb-10 text-center sm:mb-12">
+            <TextReveal
+              as="p"
+              className="mb-4 text-xs font-semibold tracking-[0.25em] text-orange-400 sm:text-sm sm:tracking-[0.3em]"
             >
-              <button
-                onClick={() => toggleFAQ(index)}
-                className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left sm:px-6 sm:py-6 md:px-8"
-              >
-                <span className="text-base font-semibold leading-6 sm:text-lg md:text-xl">
-                  {faq.question}
-                </span>
+              HAVE QUESTIONS?
+            </TextReveal>
 
-                <span className="shrink-0 text-xl text-orange-400 sm:text-2xl">
-                  {openIndex === index ? "−" : "+"}
-                </span>
-              </button>
+            <TextReveal as="h2" split="word" delayChildren={0.1} className="text-3xl font-bold sm:text-4xl md:text-5xl">
+              We&apos;ve Got Answers
+            </TextReveal>
+          </div>
 
-              {openIndex === index && (
-                <div className="border-t border-white/10 px-5 pb-5 pt-4 sm:px-6 sm:pb-6 sm:pt-5 md:px-8 md:pb-8">
-                  <p className="text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
-                    {faq.answer}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+          <div className="flex items-start gap-10 lg:gap-16">
+            <motion.div
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={list}
+              className="flex-1 space-y-3 sm:space-y-4"
+            >
+              {faqs.map((faq, index) => (
+                <motion.div
+                  key={faq.question}
+                  variants={item}
+                  className="overflow-hidden rounded-xl border border-white/10 bg-white/5 sm:rounded-2xl"
+                >
+                  <button
+                    onClick={() => toggleFAQ(index)}
+                    className="flex w-full items-center gap-4 px-5 py-5 text-left sm:px-6 sm:py-6 md:px-8"
+                  >
+                    <span className="shrink-0 font-display text-sm font-bold text-primary sm:text-base">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
 
-      </section>
+                    <span className="flex-1 text-base font-semibold leading-6 sm:text-lg md:text-xl">
+                      {faq.question}
+                    </span>
 
-      {/* UPDATE SECTION */}
-      <section className="border-t border-white/10 bg-white/[0.02] px-6 py-16 text-center sm:py-20 md:py-24">
+                    <span className="shrink-0 text-xl text-orange-400 sm:text-2xl">
+                      {openIndex === index ? "−" : "+"}
+                    </span>
+                  </button>
 
-        <p className="text-xs font-semibold tracking-[0.25em] text-orange-400 sm:text-sm sm:tracking-[0.3em]">
-          STILL HAVE QUESTIONS?
-        </p>
+                  {openIndex === index && (
+                    <div className="border-t border-white/10 px-5 pt-4 pb-5 sm:px-6 sm:pt-5 sm:pb-6 md:px-8 md:pb-8">
+                      <p className="pl-9 text-sm leading-6 text-slate-400 sm:pl-11 sm:text-base sm:leading-7">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
 
-        <h2 className="mx-auto mt-5 max-w-3xl text-3xl font-bold sm:text-4xl md:text-5xl">
-          More details are coming soon.
-        </h2>
+            <VerticalAccentText className="pt-4" />
+          </div>
 
-        <p className="mx-auto mt-6 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base sm:leading-7">
-          Tech4Bharat 2026 information will continue to be updated as official
-          details are confirmed by the organizers.
-        </p>
+        </section>
 
-      </section>
+        {/* UPDATE SECTION */}
+        <section className="border-t border-white/10 bg-white/[0.02] px-6 py-16 text-center sm:py-20 md:py-24">
 
-    </main>
+          <TextReveal
+            as="p"
+            className="text-xs font-semibold tracking-[0.25em] text-orange-400 sm:text-sm sm:tracking-[0.3em]"
+          >
+            STILL HAVE QUESTIONS?
+          </TextReveal>
+
+          <TextReveal
+            as="h2"
+            split="word"
+            delayChildren={0.1}
+            className="mx-auto mt-5 max-w-3xl text-3xl font-bold sm:text-4xl md:text-5xl"
+          >
+            More details are coming soon.
+          </TextReveal>
+
+          <TextReveal
+            as="p"
+            delayChildren={0.3}
+            className="mx-auto mt-6 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base sm:leading-7"
+          >
+            Tech4Bharat 2026 information will continue to be updated as official
+            details are confirmed by the organizers.
+          </TextReveal>
+
+        </section>
+
+      </main>
+    </PageBackdrop>
   );
 }

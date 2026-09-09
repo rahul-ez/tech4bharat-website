@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, type Variants } from "motion/react";
 
 import { Button } from "@/components/ui/button";
+import { VerticalAccentText } from "@/components/ui/vertical-accent-text";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,6 +30,9 @@ import { cn } from "@/lib/utils";
  *    string from `project-overview.md` ("Scalable Innovations for
  *    Next-Gen India" — already used verbatim in Hero), split into its
  *    four words and stacked vertically, so no new phrasing is introduced.
+ *    Originally built inline here; extracted to
+ *    `components/ui/vertical-accent-text.tsx` once `/faq` wanted the same
+ *    device, rather than a second hand-copied instance.
  */
 
 interface Tier {
@@ -50,8 +54,6 @@ const TIERS: Tier[] = [
   { place: "1st", amount: "₹3,00,000", featured: true, markerHeight: 172, peakBottom: 165, leftPercent: 50 },
   { place: "3rd", amount: "₹1,00,000", featured: false, markerHeight: 70, peakBottom: 106, leftPercent: 78 },
 ];
-
-const THEME_WORDS = ["Scalable", "Innovations", "Next-Gen", "India"];
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 
@@ -178,16 +180,7 @@ export function PrizeDisplay() {
           </motion.div>
         </div>
 
-        <div aria-hidden="true" className="hidden shrink-0 flex-col items-center gap-6 pb-10 lg:flex">
-          {THEME_WORDS.map((word) => (
-            <span
-              key={word}
-              className="font-body text-xs font-semibold tracking-[0.25em] text-text-muted uppercase [writing-mode:vertical-rl]"
-            >
-              {word}
-            </span>
-          ))}
-        </div>
+        <VerticalAccentText className="pb-10" />
       </motion.div>
     </div>
   );
