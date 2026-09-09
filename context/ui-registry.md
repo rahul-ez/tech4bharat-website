@@ -117,6 +117,15 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Accessibility requirements:** if interactive, must be a real `<button>`/`<a>` or have full keyboard/ARIA support — a `<div>` with an onClick is not acceptable.
 - **Notes:** Featured variant's glow is reserved specifically for the 1st-place prize card per `ui-rules.md` — not a general-purpose "emphasis" toggle.
 
+### IconCard
+- **Status:** Active — `components/ui/icon-card.tsx`, first used on `/rules`' 3x2 participation-guidelines grid (DEC-014)
+- **Purpose:** A small icon + title + description composition built on Card's `standard` variant, for grids of parallel categorical items.
+- **Use when:** A short list of parallel, non-sequential items each need a one-line label + short description + a functional icon (e.g. `/rules`' six guidelines). Not for anything ordered/sequential — see Approach Steps for that shape instead.
+- **Composition:** Card (`standard`) + a rounded icon badge (`primary-muted` fill, `primary/30` border, `primary` icon) + `h3` title + `p` description.
+- **Accessibility requirements:** the icon is `aria-hidden`, always paired with a visible text title — functional labeling, never standing alone, the same category as Timeline's phase icons (DEC-006), not a new decorative-icon exception.
+- **Token/rule dependencies:** `surface-secondary`/`border` (via Card), `primary`/`primary-muted` (icon badge), `text-primary`/`text-secondary` (title/description).
+- **Relevant routes:** `/rules` only, so far.
+
 ### Drawer
 - **Status:** Active — `components/ui/sheet.tsx` (shadcn/Radix "Sheet"; this is the Drawer primitive registered here)
 - **Purpose:** Slide-in overlay panel from a screen edge.
@@ -168,7 +177,7 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Responsive behavior:** No structural change — the underlying text/heading element's own responsive classes (font-size steps, etc.) are untouched; `TextReveal` only adds the entrance behavior via `className`/`variants`, never repositions or resizes content.
 - **Accessibility requirements:** `once: true` on the `whileInView` trigger is hardcoded, not exposed as a prop — every consumer gets the same one-time guarantee, since a recurring bug this session was animations quietly re-triggering on scroll (Timeline's spine used to be continuously `useScroll`-linked; Prize Display and the About page's network graphics both needed explicit verification their entrances don't replay). Reduced motion is handled the same way as everywhere else — `MotionConfig`'s `reducedMotion="user"` (global, via `components/motion-provider.tsx`) drops the `y` transform after hydration while keeping the opacity fade; nothing here branches on `useReducedMotion()` for structure. Verified on its first real usage (About page), not assumed from the pattern alone: (1) computed per-word opacity sampled at short intervals after a fresh page load showed genuine staggering — word 1 reaches ~0.98 opacity while word 7 is still at 0 in the same frame, not simultaneous; (2) computed opacity/transform for both a `split="word"` heading and a `split="none"` paragraph, compared immediately after their first reveal against two further scroll-away-and-back cycles (including one scrolling past the whole page first), came back byte-identical every time — confirmed neither replays.
 - **Token/rule dependencies:** No new tokens — consumes whatever typography/color classes the caller passes via `className`, same as `motion.h1`/`motion.p` did directly before extraction.
-- **Relevant routes:** `/about`, `/challenges`. Not yet retrofitted onto Hero/Timeline's own existing hand-rolled implementations, or onto FAQ/Register/Rules — see `context/decisions.md` for the reasoning and `progress-tracker.md` for what's still open.
+- **Relevant routes:** `/about`, `/challenges`, `/rules`. Not yet retrofitted onto Hero/Timeline's own existing hand-rolled implementations, or onto FAQ/Register — see `context/decisions.md` for the reasoning and `progress-tracker.md` for what's still open.
 - **Notes:** Hero and Timeline's own text entrances were deliberately left as-is this round rather than refactored onto `TextReveal` — they already work correctly and doing so wasn't asked for; the extraction was scoped to "pull the pattern into a reusable component and prove it on new usage," not "retrofit every existing usage in the same pass."
 
 ---
@@ -215,7 +224,7 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Responsive behavior:** no structural change; width caps to `content-column-narrow` at all sizes.
 - **Accessibility requirements:** the heading here is the page's single `<h1>`.
 - **Token/rule dependencies:** label typography, page-heading typography (`text-4xl`/`leading-[1.15]` — the exact `2.25rem`/`1.15` from `ui-tokens.md`'s Typography table), `text-secondary`, `space-8` to first content section. The component itself stays flat (no gradient/glow of its own) even on `/timeline`, which wraps it in `PageBackdrop` — the backdrop is the page's concern, not the header's, per `ui-rules.md`'s Page Headers section.
-- **Relevant routes:** `/timeline` only. `/prizes` no longer uses this component — it now has its own bespoke two-column header built into `PrizeDisplay`, per `context/decisions.md` DEC-008. Not yet used by `/about`, `/challenges`, `/rules`, `/faq`, `/register` — those pages don't exist yet.
+- **Relevant routes:** `/timeline` only. `/prizes` no longer uses this component — it now has its own bespoke two-column header built into `PrizeDisplay`, per `context/decisions.md` DEC-008. `/about`, `/challenges`, and `/rules` exist now but each uses its own centered hero-style intro (originally built by a teammate, kept and extended rather than migrated to `PageHeader`) instead of this component — a pre-existing inconsistency with this entry's "standard pattern" framing, not yet reconciled; see `progress-tracker.md`. `/faq`/`/register` don't have a built header yet.
 
 ### Hero
 - **Status:** Active — `components/public/hero.tsx`
@@ -334,13 +343,13 @@ The Phase 0/1 primitive pass (see `progress-tracker.md`) implemented every Primi
 - **Relevant routes:** `/register`.
 
 ### Status / Notification Banner
-- **Status:** Planned
+- **Status:** Active — `components/public/notification-banner.tsx`. First real implementation of this spec-only entry, built for `/rules`' "Official Guidelines May Be Updated" notice (DEC-014) — the "other routes only once a concrete need exists" case this entry already anticipated.
 - **Purpose:** An inline, non-blocking message communicating success, error, warning, or informational state at a section/page level (distinct from a Badge, which is inline with other content).
 - **Use when:** Form submission success/failure, page-level notices.
-- **Composition:** icon + short message on a semantic `-light` background.
-- **Token/rule dependencies:** `success`/`warning`/`error`/`info` + their `-light` variants.
-- **Accessibility requirements:** `role="alert"` (error) or `aria-live="polite"` (success/info) as appropriate.
-- **Relevant routes:** `/register` (confirmed use — the Forms success state in `ui-rules.md`); other routes only once a concrete need exists.
+- **Composition:** icon + eyebrow + heading + short message on a semantic `-light` background, per variant (`info`/`success`/`warning`/`error`).
+- **Token/rule dependencies:** `success`/`warning`/`error`/`info` + their `-light` variants. `/rules` uses `warning` — the same tokens as the Badge/Card status variants elsewhere, at a larger fill than a Badge's small pill, per its reference's own bold treatment for this specific notice.
+- **Accessibility requirements:** `role="alert"` (error) or `aria-live="polite"` (info/success/warning) as appropriate.
+- **Relevant routes:** `/rules` (its first real usage), `/register` (confirmed future use — the Forms success state in `ui-rules.md`, not yet built since `/register` has no live form yet).
 
 ### Table
 - **Status:** Planned
@@ -524,12 +533,13 @@ Before creating a new reusable component, ask:
 | Radio | Primitive | Active | Single-choice entry | `/register` (if needed) |
 | Badge | Primitive | Active | Inline status/label indicator | All routes |
 | Card | Primitive | Active | Base bounded-content surface | All routes |
+| IconCard | Primitive | Active | Icon + title + description card, for parallel categorical grids | `/rules` so far |
 | Drawer | Primitive | Active | Slide-in overlay panel | Mobile nav |
 | Spinner / Loading Indicator | Primitive | Active | In-progress async state | Buttons, forms |
 | Separator | Primitive | Active | Visual divider | FAQ, Table |
 | Dialog / Modal | Primitive | Active | Centered blocking overlay | None confirmed yet |
 | Focus Treatment | Primitive (style) | Active | Shared focus-visibility style | All interactive elements |
-| TextReveal | Primitive | Active | One-time fade+rise text entrance (word-stagger or block) | `/about` so far |
+| TextReveal | Primitive | Active | One-time fade+rise text entrance (word-stagger or block) | `/about`, `/rules`, `/challenges` |
 | Site Header | Composed | Planned | Persistent public navigation | All public routes |
 | Mobile Navigation Drawer | Composed | Planned | Mobile-collapsed nav | All public routes |
 | Page Backdrop | Composed | Active | Grid-texture-only page background (no aurora/glow) | All public routes except `/` |
@@ -546,7 +556,7 @@ Before creating a new reusable component, ask:
 | Approach Steps | Composed | Active | Numbered process sequence, connected-step layout | `/challenges` only |
 | Form Field | Composed | Planned | Label + input + helper/error unit | `/register` |
 | Form Section | Composed | Planned | Grouped Form Fields + submit | `/register` |
-| Status / Notification Banner | Composed | Planned | Inline success/error/warning/info message | `/register` |
+| Status / Notification Banner | Composed | Active | Inline success/error/warning/info message | `/rules`, `/register` (planned) |
 | Table | Composed | Planned | Structured tabular data display | Conditional (participant/admin) |
 | Table Empty State | Composed | Planned | Empty Table body state | Conditional (participant/admin) |
 | Public Information Page | Page Pattern | Planned | Header → content composition | `/about`, `/challenges`, `/rules`, `/faq` |

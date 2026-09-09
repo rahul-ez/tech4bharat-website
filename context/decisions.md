@@ -252,3 +252,25 @@ Direct instruction to redesign the page against specific references, with an exp
 
 **Impact:**
 `app/challenges/page.tsx` (rewritten), `components/public/approach-steps.tsx` (new), `components/public/pending-confirmation-state.tsx` (new — the first real "Pending Confirmation State"), `context/ui-registry.md` (Pending Confirmation State and Pending Information Section flipped Planned → Active; new Approach Steps entry; `TextReveal`'s relevant-routes note updated). Does not touch FAQ/Register/Rules — those remain open per DEC-010/DEC-012's tracked-separately notes.
+
+---
+
+### DEC-014 — `/rules` redesigned: a 3x2 `IconCard` grid, plus the first real `IconCard` and `Status/Notification Banner`
+**Status:** Accepted
+**Date:** 2026-09-09
+**Owner:** Sam
+
+**Decision:**
+`/rules` (previously flat-navy with a plain numbered-card grid, built by the teammate) is rebuilt against a direct reference image, with two components getting their first real implementation along the way:
+
+1. **A correction before building, not silently worked around:** the request asked to "reuse the existing `IconCard` component from About/Challenges" — no such component existed anywhere in the codebase or `ui-registry.md` (confirmed by grepping the repo before writing any code, not assumed). Flagged, then built fresh as `components/ui/icon-card.tsx` (a small Card-based icon + title + description composition) rather than either silently inventing one under a false "it already existed" premise or stalling the whole task on the naming mix-up.
+2. **`IconCard` powers `/rules`' 3x2 grid** — one icon per rule (`ClipboardCheck`/Eligibility, `Users`/Team Participation, `Lightbulb`/Original Work, `Shield`/Code of Conduct, `Upload`/Submission Requirements, `Gavel`/Organizer Decisions), each icon functionally paired with its rule's text title, never standing alone — same category as Timeline's phase icons (DEC-006), not a new decorative-icon exception. All six rules' copy, and the closing notice's copy, is unchanged from the previous version — only the visual presentation changed, per explicit instruction not to touch the substance (already correctly hedged against `tbd.md`'s unconfirmed eligibility/team-structure/submission details).
+3. **No timeline/connected-step/numbered-sequence motif here**, per explicit instruction — these six rules are categorical (parallel, unordered), not chronological, and that shape is already `/timeline`'s and Challenges' `ApproachSteps`' visual identity. `/rules` deliberately looks different: a plain grid, no connecting line, no numbering.
+4. **A real build error, caught and fixed before shipping:** the first attempt defined the six rules (icon components included) in the server-rendered `app/rules/page.tsx` and passed them as props into the "use client" grid component. The production build failed — Lucide icon components are functions, and React can't serialize a function across the Server → Client Component prop boundary. Fixed by moving the rule data (including the icon imports) inside the "use client" `components/public/rules-grid.tsx` itself, the same pattern Timeline's own `MILESTONES` array (also icon-bearing) already uses for the identical reason.
+5. **`components/public/notification-banner.tsx`** is the first real implementation of the "Status / Notification Banner" registry entry (previously spec-only, confirmed use limited to `/register`'s not-yet-built form success state) — built to the existing spec (icon + short message on a semantic `-light` background, `role="alert"`/`aria-live` per variant) and used here in `warning` variant for "Official Guidelines May Be Updated," which the registry entry's own "other routes only once a concrete need exists" line already anticipated.
+
+**Reason:**
+Direct instruction to redesign against a specific reference, reusing (or, once the premise was checked and found false, freshly building) a shared icon-card pattern rather than a bespoke one-off, and to keep `/rules` visually distinct from the two sequence-shaped pages already in the product.
+
+**Impact:**
+`app/rules/page.tsx` (rewritten), `components/ui/icon-card.tsx` (new), `components/public/rules-grid.tsx` (new), `components/public/notification-banner.tsx` (new), `context/ui-registry.md` (new IconCard entry; Status/Notification Banner flipped Planned → Active; `TextReveal`'s and `PageHeader`'s relevant-routes notes updated). Does not touch FAQ/Register.
