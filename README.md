@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tech4Bharat 2026
+
+The official website for **Tech4Bharat 2026** — a national hackathon, part of the Global Accelerator Vision Summit (GAVS) 2026, themed *"Scalable Innovations for Next-Gen India."* Online preliminary rounds followed by an on-site grand finale in Bengaluru, 25–27 December 2026.
+
+Built with Next.js 16 (App Router), TypeScript (strict), and Tailwind CSS v4.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Other scripts:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build   # production build
+npm run start   # serve the production build
+npm run lint    # eslint
+```
 
-## Learn More
+## Before You Contribute — Read This First
 
-To learn more about Next.js, take a look at the following resources:
+This project is governed by a documentation system in [`context/`](./context) that every contributor — human or AI agent — is expected to read before making changes. It is the source of truth for requirements, architecture, and design, and takes precedence over ad hoc decisions made in code review.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Start with [`AGENTS.md`](./AGENTS.md), then:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| File | Covers |
+|---|---|
+| `context/project-overview.md` | What Tech4Bharat 2026 actually is — confirmed facts only |
+| `context/tbd.md` | What's still unconfirmed — never invent past this |
+| `context/architecture.md` | System boundaries and architecture |
+| `context/ui-tokens.md` | Design tokens (color, type, spacing, motion) |
+| `context/ui-rules.md` | How those tokens compose into UI |
+| `context/ui-registry.md` | Every reusable component, its status, and where it's used |
+| `context/code-standards.md` | Coding conventions |
+| `context/library-docs.md` | Adopted libraries and the process for adding new ones |
+| `context/decisions.md` | Log of non-obvious implementation decisions and why they were made |
+| `context/progress-tracker.md` | What's actually built vs. planned, per route/component |
+| `context/build-plan.md` | Implementation phase order |
 
-## Deploy on Vercel
+**The two rules that matter most:** never invent hackathon facts or requirements beyond what `project-overview.md`/`tbd.md` confirm, and never introduce a color, font, or visual pattern outside what `ui-tokens.md` defines.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/                    Next.js App Router pages
+  about/ challenges/ faq/ prizes/ register/ rules/ timeline/
+components/
+  ui/                   Design-system primitives (Button, Card, Input, ...)
+  public/               Composed, page-level components
+lib/                    Shared utilities, server-only data helpers
+context/                Governance docs — see above
+```
+
+## Routes
+
+`/`, `/about`, `/challenges`, `/timeline`, `/prizes`, `/rules`, `/faq`, `/register` are live. Participant/admin routes (`/dashboard`, `/team`, `/submission`, `/admin`) are conditional on unresolved product decisions — see `context/tbd.md`.
