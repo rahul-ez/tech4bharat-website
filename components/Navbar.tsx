@@ -1,129 +1,105 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
-/**
- * Navbar — the shared site header. Sticky (added previously), now also:
- * - Semi-transparent + `backdrop-blur-md` instead of a solid fill, so the
- *   page's grid-pattern backdrop subtly shows through underneath it.
- * - A bottom border that fades in once scrolled past ~50px, rather than
- *   being present from y=0 — blends into the Hero at the very top of the
- *   homepage, then gives scrolled content a clear separation line. This
- *   is a one-time-per-threshold state flip (`scrolled` crosses `false`→
- *   `true` once, back on scroll-up), driven by a plain `scroll` listener
- *   with a CSS `transition-colors` for the fade — not a continuous/
- *   looping animation.
- *
- * The scroll listener only runs client-side, after mount (`useEffect`),
- * with `scrolled` initialized to `false` — matching this project's
- * established pattern for anything that reads real browser state
- * (`window.scrollY` has no meaningful SSR value): the server and first
- * client paint always agree (unscrolled), the real state fills in
- * immediately after mount, avoiding a hydration mismatch.
- */
 export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > 50);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "About", href: "/about" },
-    { name: "Challenges", href: "/challenges" },
-    { name: "Timeline", href: "/timeline" },
-    { name: "Prizes", href: "/prizes" },
-    { name: "Rules", href: "/rules" },
-    { name: "FAQ", href: "/faq" },
-  ];
-
   return (
-    <header
-      className={`sticky top-0 z-50 border-b bg-surface/80 backdrop-blur-md transition-colors duration-300 ${
-        scrolled ? "border-border-light" : "border-transparent"
-      }`}
-    >
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 md:px-8 md:py-5">
+    <nav className="border-b border-white/10 bg-[#080d1a] px-4 py-3 sm:px-6 md:px-12">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
 
-        {/* LOGO */}
+        {/* Logos and Website Brand */}
         <Link
           href="/"
-          className="flex flex-col"
-          onClick={() => setMenuOpen(false)}
+          className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90"
         >
-          <span className="text-xl font-bold tracking-wide text-white md:text-2xl">
-            TECH4BHARAT
-          </span>
+          {/* Logo Group */}
+          <div className="flex shrink-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.06] px-2 py-2 sm:gap-3 sm:px-3">
 
-          <span className="mt-1 text-xs font-medium tracking-[0.3em] text-orange-400 md:text-sm">
-            2026
-          </span>
+            {/* RVCE Circular Logo */}
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-md sm:h-14 sm:w-14">
+              <Image
+                src="/rvce-logo.png"
+                alt="RV College of Engineering"
+                width={80}
+                height={80}
+                className="h-full w-full rounded-full object-cover"
+              />
+            </div>
+
+            {/* Divider */}
+            <div className="h-9 w-px bg-white/25 sm:h-11" />
+
+            {/* GAVS Logo */}
+            <div className="flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white px-1.5 py-1 shadow-md sm:h-14 sm:w-20">
+              <Image
+                src="/gavs-logo.png"
+                alt="GAVS"
+                width={100}
+                height={70}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          </div>
+
+          {/* Website Name */}
+          <div className="hidden border-l border-white/20 pl-3 sm:block md:pl-4">
+            <p className="text-base font-extrabold tracking-wide text-white md:text-lg">
+              TECH4BHARAT
+            </p>
+
+            <p className="mt-1 text-xs font-semibold tracking-[0.3em] text-orange-400">
+              2026
+            </p>
+          </div>
         </Link>
 
-        {/* DESKTOP NAVIGATION */}
-        <div className="hidden items-center gap-6 text-base text-slate-300 lg:flex xl:gap-9">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className="transition hover:text-orange-400"
-            >
-              {link.name}
-            </Link>
-          ))}
+        {/* Navigation Links */}
+        <div className="hidden items-center gap-4 text-sm font-medium text-gray-300 lg:flex xl:gap-6">
+          <Link
+            href="/"
+            className="transition-colors hover:text-orange-400"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/about"
+            className="transition-colors hover:text-orange-400"
+          >
+            About
+          </Link>
+
+          <Link
+            href="/challenges"
+            className="transition-colors hover:text-orange-400"
+          >
+            Challenges
+          </Link>
+
+          <Link
+            href="/rules"
+            className="transition-colors hover:text-orange-400"
+          >
+            Rules
+          </Link>
+
+          <Link
+            href="/faq"
+            className="transition-colors hover:text-orange-400"
+          >
+            FAQ
+          </Link>
         </div>
 
-        {/* DESKTOP REGISTER BUTTON */}
+        {/* Register Button */}
         <Link
           href="/register"
-          className="hidden rounded-full bg-orange-500 px-6 py-3 text-base font-semibold text-white transition hover:bg-orange-600 lg:block xl:px-8 xl:text-lg"
+          className="shrink-0 rounded-full bg-gradient-to-r from-orange-500 to-amber-400 px-3 py-2 text-xs font-bold text-[#080d1a] shadow-lg shadow-orange-500/20 transition-all hover:scale-105 hover:shadow-orange-500/40 sm:px-5 sm:py-2.5 sm:text-sm"
         >
           Register Now
         </Link>
-
-        {/* MOBILE MENU BUTTON */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-2xl text-white transition hover:bg-white/10 lg:hidden"
-          aria-label="Toggle navigation menu"
-        >
-          {menuOpen ? "✕" : "☰"}
-        </button>
-      </nav>
-
-      {/* MOBILE MENU */}
-      {menuOpen && (
-        <div className="border-t border-white/10 bg-surface/95 backdrop-blur-md px-5 py-5 lg:hidden">
-          <div className="flex flex-col gap-5">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="text-base text-slate-300 transition hover:text-orange-400"
-              >
-                {link.name}
-              </Link>
-            ))}
-
-            <Link
-              href="/register"
-              onClick={() => setMenuOpen(false)}
-              className="mt-2 rounded-full bg-orange-500 px-6 py-3 text-center text-base font-semibold text-white transition hover:bg-orange-600"
-            >
-              Register Now
-            </Link>
-          </div>
-        </div>
-      )}
-    </header>
+      </div>
+    </nav>
   );
 }
